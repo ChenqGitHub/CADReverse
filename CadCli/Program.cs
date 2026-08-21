@@ -5,6 +5,8 @@ using GcsDwg.Infrastructure;
 
 var doc = new CadDocument();
 
+Console.WriteLine("heel");
+
 CadInitializer.InitCad(doc);
 GeneratedDraw.DrawFromPythonGeneratedCode(doc);
 
