@@ -1,30 +1,30 @@
 # CADReverse
 
-梁图出图逆向工程工作流：用代码复刻现有 ZWCAD 图纸，为后续参数化出图打基础。分三部分：
+梁图出图逆向工程工作流：用代码复刻现有 ZWCAD 图纸，为后续参数化出图打基础。分两部分：
 
 | 部分 | 作用 |
 | --- | --- |
-| `GcsDwg/` | ACadSharp 封装类库：CAD 标准（图层/文字样式/标注样式）+ 绘图原语 + 常用块。 |
 | `Cadpython/` | Python（pyzwcad）读取 ZWCAD 图元，输出可粘贴的 C# 绘图代码。 |
 | `CadCli/` | 控制台应用：运行生成/手写的 C# 代码并写出 DWG。 |
 
-## GcsDwg（类库）
+绘图类库 **[DwgSharpKit](https://github.com/ChenqGitHub/DwgSharpKit)** 已独立成仓（NuGet 包 `DwgSharpKit`），本仓库的 `CadCli` 通过包引用使用它。
 
-- `Standards/`
-  - `CadLayers.cs`：标准图层目录（B-01~B-09，依据制图标准化 表2-2）。单一数据源，初始化与绘图都从这里取。
-  - `CadTextStyles.cs`：标准文字样式（仿宋 TTF / 非仿宋 SHX）。
-  - `CadDimStyles.cs`：标准标注样式（仿宋/非仿宋 × 1:1/1:50）。
-- `Infrastructure/`
-  - `CadInitializer.cs`：遍历标准目录建线型/图层/文字样式/标注样式，注册常用块。
-- `Drawing/`
-  - `CadDraw.*.cs`：绘图原语（Line/Arc/Circle/Polyline/Text/Dimension），实体统一挂到 `doc.Entities`。
-  - `CadDocumentExtensions.cs`：`doc.Layer(CadLayers.B01)` 等常规扩展。
-- `Models/`
-  - `CadPolyline.cs`、`CadText.cs`：绘图参数 record。
-- `Blocks/`
-  - `HRB400Block.cs`、`SteelSection.cs`：常用钢筋块（含属性）。
+## DwgSharpKit（独立仓库）
+
+类库源码与发布流程见 [github.com/ChenqGitHub/DwgSharpKit](https://github.com/ChenqGitHub/DwgSharpKit)。
+
+- `Standards/`：标准图层（B-01~B-09）/文字样式/标注样式，单一数据源。
+- `Drawing/`：`CadDraw` 绘图原语 + `CadDocumentExtensions`（`doc.Layer(CadLayers.B01)` 等）。
+- `Blocks/`：HRB400 钢筋块、钢结构断面、标题栏、剖面、引线标注。
+- `Rebar/`：钢筋大样模型（对称/非对称/箍筋顶点生成、逐段单行文本标注、整根引线标注、属性 XData）。
+- `Infrastructure/`：`CadInitializer` 一键初始化标准。
 
 引用图层/样式一律用常量：`doc.Layer(CadLayers.B03)`、`doc.TextStyle(CadTextStyles.JstiSimsun)`、`doc.DimStyle(CadDimStyles.FangSong1_50)`，避免散落字符串。
+
+## 本地打包与引用
+
+- 在 DwgSharpKit 仓库执行 `dotnet pack -c Release -o nupkgs`，把产物拷到本仓库 `nupkgs/`（已含 `acadsharp.3.7.1.nupkg` 供离线还原）。
+- `CadCli/NuGet.config` 已指向本地源 `../nupkgs`；正式发布到 nuget.org 后可切换官方源。
 
 ## Cadpython
 
@@ -50,5 +50,5 @@
 
 ## 约定
 
-- `GcsDwg` 是类库，所有标准/原语先加在这里；`CadCli` 只放应用逻辑与生成代码。
+- `CadCli` 只放应用逻辑与生成代码；库代码一律进独立的 [DwgSharpKit](https://github.com/ChenqGitHub/DwgSharpKit) 仓库。
 - `Cadpython` 生成的代码要求：新标准层先加进 `CadLayers` 并同步 `main.py` 的 `STANDARD_LAYERS` 映射。

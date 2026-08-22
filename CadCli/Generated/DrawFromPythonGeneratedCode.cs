@@ -2,10 +2,10 @@ using ACadSharp;
 using ACadSharp.Entities;
 using ACadSharp.Extensions;
 using CSMath;
-using GcsDwg;
-using GcsDwg.Blocks;
-using GcsDwg.Rebar;
-using GcsDwg.Standards;
+using DwgSharpKit;
+using DwgSharpKit.Blocks;
+using DwgSharpKit.Rebar;
+using DwgSharpKit.Standards;
 
 namespace CadCli.Generated;
 
@@ -225,21 +225,65 @@ public static partial class GeneratedDraw
         // 图题
         TitleBlock.Add(doc, "钢筋大样图", "", CadDraw.P(242549.0624, 16408.2951), 50);
 
-        LeaderAnnotationBlock.Add(
+        // N1 对称线筋：一根钢筋 = 形状 + 每段单行文本标注 + 整根引线标注（编号 N1 / 直径 12 / 长度 L=900），
+        // PlaceDetail 落地时自动把 编号/等级/直径/根数/长度 写入多段线 XData
+        var n1 = new Rebar
+        {
+            Number = "N1",
+            Diameter = 12,
+            SubstituteLength = "900",
+            Vertices = SymmetricRebar.BuildVertices(
+                [RebarDetail.V(-450, 0), RebarDetail.V(0, 0)]
+            ),
+        };
+        n1.PlaceDetail(
             doc,
             CadDraw.P(242625.296067, 15882.500674),
             CadDraw.P(242814.314896, 16090.206334),
-            "N1",
-            "12 L=900",
-            50
+            scale: 50
         );
 
-        doc.AddTranslated(
-            CadDraw.P(242625.296067, 15882.500674),
-            SymmetricRebar.Add(
-                doc,
-                [new RebarVertex(new XY(-450, 0)), new RebarVertex(new XY(0, 0))]
-            )
+        // N11 箍筋（竖直）：左钩132 → 左边3170 → 顶332 → 右边3170 → 右钩132，整根 L=6936。
+        // 每段长度自动标注（几何算），引线标注 编号 N11 + 规格 Φ12 L=6936；XData 记录 编号/等级/直径/根数/长度。
+        var n11 = new Rebar
+        {
+            Number = "N11",
+            Diameter = 12,
+            Count = 2,
+            Vertices =
+            [
+                RebarDetail.V(-132, 0), RebarDetail.V(0, 0),
+                RebarDetail.V(0, 3170), RebarDetail.V(332, 3170),
+                RebarDetail.V(332, 0), RebarDetail.V(464, 0),
+            ],
+        };
+        n11.PlaceDetail(
+            doc,
+            CadDraw.P(241700.0, 14100.0),        // 图形位置（左钩外端；位置可调）
+            CadDraw.P(242300.0, 15000.0),        // 引线拐点/文字基准点
+            scale: 50
+        );
+
+        // N8 水平线筋（带两端立钩）：左钩132 → 直段8699 → 右钩132，整根 L=8963。
+        // 直段文本覆盖为范围 "9403~7995"（替代长度），引线标注 编号 N8 + 规格 Φ12 L=8963。
+        var n8 = new Rebar
+        {
+            Number = "N8",
+            Diameter = 12,
+            Count = 3,
+            Vertices =
+            [
+                RebarDetail.V(0, 132),                  // [0] 左钩顶端
+                RebarDetail.V(0, 0, "9403~7995"),       // [1] 左钩底（直段起点，Text 覆盖直段）
+                RebarDetail.V(8699, 0),                 // [2] 直段终点 / 右钩起点
+                RebarDetail.V(8699, 132),               // [3] 右钩顶端
+            ],
+        };
+        n8.PlaceDetail(
+            doc,
+            CadDraw.P(236000.0, 11800.0),        // 图形位置（左钩顶端；位置可调）
+            CadDraw.P(239000.0, 12800.0),        // 引线拐点/文字基准点
+            scale: 50
         );
 
         #endregion

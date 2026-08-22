@@ -1,4 +1,3 @@
 <Solution>
   <Project Path="CadCli\CadCli.csproj" />
-  <Project Path="GcsDwg\GcsDwg.csproj" />
 </Solution>

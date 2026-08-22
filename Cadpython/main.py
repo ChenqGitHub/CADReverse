@@ -4,7 +4,7 @@ import math
 from pyzwcad import ZwCAD
 from comtypes.gen.ZWCAD import IZcadDimRotated
 
-# 标准图层目录：名称 -> CadLayers 常量名（与 GcsDwg/Standards/CadLayers.cs 保持一致）。
+# 标准图层目录：名称 -> CadLayers 常量名（与 DwgSharpKit/Standards/CadLayers.cs 保持一致）。
 # 已知标准层生成 doc.Layer(CadLayers.Bxx) 引用，未知层回退 doc.Layers["..."] 字符串。
 STANDARD_LAYERS = {
     "B-01 粗实线": "CadLayers.B01",
