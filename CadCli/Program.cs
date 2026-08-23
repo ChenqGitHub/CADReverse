@@ -7,7 +7,7 @@ var doc = new CadDocument();
 
 
 CadInitializer.InitCad(doc);
-GeneratedDraw.DrawFromPythonGeneratedCode(doc);
+GeneratedDraw.DrawFromPythonGeneratedCode(doc); // 支座加强钢筋布置图
 
 var output = WriteDwg(
     doc,
