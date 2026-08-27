@@ -8,6 +8,7 @@ using DwgSharpKit;
 using DwgSharpKit.Blocks;
 using DwgSharpKit.Rebar;
 using DwgSharpKit.Standards;
+using DwgSharpKit.Tables;
 
 namespace CadCli.Generated;
 
@@ -40,39 +41,37 @@ public static partial class GeneratedDraw
         );
 
         // 方向
-        doc.AddEntities<Entity>(
-            [
-                CadDraw.Polyline(
-                    [
-                        CadDraw.V(234523.821508, 12797.463156),
-                        CadDraw.V(234603.283246, 12757.254591),
-                        CadDraw.V(234031.113629, 12757.254591),
-                    ],
-                    doc.Layer(CadLayers.B03)
-                ),
-                CadDraw.Text(
-                    "横桥向",
-                    CadDraw.P(234111.156214, 12795.116859),
-                    125,
-                    doc.Layer(CadLayers.B07)
-                ),
-                CadDraw.Polyline(
-                    [
-                        CadDraw.V(235653.613753, 14233.297805),
-                        CadDraw.V(235693.822319, 14312.759543),
-                        CadDraw.V(235693.822319, 13751.506135),
-                    ],
-                    doc.Layer(CadLayers.B03)
-                ),
-                CadDraw.Text(
-                    "顺桥向",
-                    CadDraw.P(235648.557444, 13837.314232, 0),
-                    125,
-                    doc.Layer(CadLayers.B07),
-                    rotation: 1.570796
-                ),
-            ]
-        );
+        doc.AddEntities<Entity>([
+            CadDraw.Polyline(
+                [
+                    CadDraw.V(234523.821508, 12797.463156),
+                    CadDraw.V(234603.283246, 12757.254591),
+                    CadDraw.V(234031.113629, 12757.254591),
+                ],
+                doc.Layer(CadLayers.B03)
+            ),
+            CadDraw.Text(
+                "横桥向",
+                CadDraw.P(234111.156214, 12795.116859),
+                125,
+                doc.Layer(CadLayers.B07)
+            ),
+            CadDraw.Polyline(
+                [
+                    CadDraw.V(235653.613753, 14233.297805),
+                    CadDraw.V(235693.822319, 14312.759543),
+                    CadDraw.V(235693.822319, 13751.506135),
+                ],
+                doc.Layer(CadLayers.B03)
+            ),
+            CadDraw.Text(
+                "顺桥向",
+                CadDraw.P(235648.557444, 13837.314232, 0),
+                125,
+                doc.Layer(CadLayers.B07),
+                rotation: 1.570796
+            ),
+        ]);
 
         DrawRebarMesh(doc, (double)233645.379631, (double)14969.982256, cols: 7, rows: 9);
         #endregion
@@ -84,35 +83,31 @@ public static partial class GeneratedDraw
         TitleBlock.Add(doc, "Ⅲ-Ⅲ", "1:25", CadDraw.P(233552.6821, 20048.4196), 50);
 
         // 构造
-        doc.AddEntities<Entity>(
-            [
-                CadDraw.Polyline(
-                    [
-                        CadDraw.V(232043.896665, 19757.021596, bulge: -0.049579),
-                        CadDraw.V(232110.626171, 19570.783812),
-                        CadDraw.V(232595.379631, 17631.734954),
-                        CadDraw.V(234945.39137, 17631.734954),
-                    ],
-                    doc.Layer(CadLayers.B04)
-                ),
-            ]
-        );
+        doc.AddEntities<Entity>([
+            CadDraw.Polyline(
+                [
+                    CadDraw.V(232043.896665, 19757.021596, bulge: -0.049579),
+                    CadDraw.V(232110.626171, 19570.783812),
+                    CadDraw.V(232595.379631, 17631.734954),
+                    CadDraw.V(234945.39137, 17631.734954),
+                ],
+                doc.Layer(CadLayers.B04)
+            ),
+        ]);
         // 中心线
-        doc.AddEntities<Entity>(
-            [
-                CadDraw.Line(
-                    CadDraw.P(234945.39137, 17402.494146),
-                    CadDraw.P(234945.39137, 19869.472137),
-                    doc.Layer(CadLayers.B06)
-                ),
-                CadDraw.MText(
-                    "箱\n梁\n中\n心\n线",
-                    CadDraw.P(235085.4642, 19253.9306),
-                    150,
-                    doc.Layer(CadLayers.B07)
-                ),
-            ]
-        );
+        doc.AddEntities<Entity>([
+            CadDraw.Line(
+                CadDraw.P(234945.39137, 17402.494146),
+                CadDraw.P(234945.39137, 19869.472137),
+                doc.Layer(CadLayers.B06)
+            ),
+            CadDraw.MText(
+                "箱\n梁\n中\n心\n线",
+                CadDraw.P(235085.4642, 19253.9306),
+                150,
+                doc.Layer(CadLayers.B07)
+            ),
+        ]);
         // 折断线
         BreakLineBlock.Insert(
             doc,
@@ -124,15 +119,13 @@ public static partial class GeneratedDraw
         );
 
         // 中心线
-        doc.AddEntities<Entity>(
-            [
-                CadDraw.Line(
-                    CadDraw.P(233770.3855, 16828.959815, 0),
-                    CadDraw.P(233770.385501, 18360.29711, 0),
-                    doc.Layer(CadLayers.B06)
-                ),
-            ]
-        );
+        doc.AddEntities<Entity>([
+            CadDraw.Line(
+                CadDraw.P(233770.3855, 16828.959815, 0),
+                CadDraw.P(233770.385501, 18360.29711, 0),
+                doc.Layer(CadLayers.B06)
+            ),
+        ]);
         LeaderAnnotationBlock.Add(
             doc,
             new(233770.3855, 16990.586066, 0),
@@ -207,15 +200,13 @@ public static partial class GeneratedDraw
             scale: 50
         );
         // 中心线
-        doc.AddEntities<Entity>(
-            [
-                CadDraw.Line(
-                    CadDraw.P(242501.578428, 18907.740101, 0),
-                    CadDraw.P(242501.578428, 17862.233805, 0),
-                    doc.Layer(CadLayers.B06)
-                ),
-            ]
-        );
+        doc.AddEntities<Entity>([
+            CadDraw.Line(
+                CadDraw.P(242501.578428, 18907.740101, 0),
+                CadDraw.P(242501.578428, 17862.233805, 0),
+                doc.Layer(CadLayers.B06)
+            ),
+        ]);
         LeaderAnnotationBlock.Add(
             doc,
             new(242501.578428, 18007.898618, 0),
@@ -272,60 +263,35 @@ public static partial class GeneratedDraw
         // 图题
         TitleBlock.Add(doc, "支座顶部加强数量钢筋表", "", CadDraw.P(0, 0), 1);
 
-        // 数量表：先生成 3×4 表格，再一次循环填入数字 1、2、3…
-        // 注意：ACadSharp 3.7.1 写 DWG/DXF 时不会写出 TABLE 实体（写入端丢弃），对象在内存中完整存在。
-        // const int tableRows = 3, tableCols = 4;
-
-        // var table = new TableEntity
-        // {
-        //     // 表格位置
-        //     InsertPoint = new XYZ(0, 0, 0),
-        //     // 使用专门创建的表格样式（仿宋、表头/数据/标题、全边框）
-        //     Style = CreateRebarTableStyle(doc),
-        // };
-
-        // // 生成 3×4 网格
-        // for (int i = 0; i < tableRows; i++)
-        // {
-        //     var row = new TableEntity.Row { Height = 10 };
-        //     for (int j = 0; j < tableCols; j++)
-        //         row.Cells.Add(new TableEntity.Cell());
-        //     table.Rows.Add(row);
-        // }
-        // for (int j = 0; j < tableCols; j++)
-        //     table.Columns.Add(new TableEntity.Column { Width = 20 });
-
-        // // 填入数字 1..12
-        // void SetCell(int r, int c, string text)
-        // {
-        //     var cell = table.GetCell(r, c);
-        //     var content = new TableEntity.CellContent { ContentType = TableEntity.TableCellContentType.Value };
-        //     content.CadValue?.SetValue(text, CadValueType.String);
-        //     cell.Contents.Add(content);
-        // }
-
-        // int n = 1;
-        // for (int i = 0; i < tableRows; i++)
-        //     for (int j = 0; j < tableCols; j++)
-        //         SetCell(i, j, (n++).ToString());
         string[,] data =
         {
+            { "支座顶部加强数量钢筋表", "", "" },
             { "编号", "钢筋规格", "数量" },
-            { "1", "HRB400 Φ16", "20" },
-            { "2", "HRB400 Φ20", "35" },
-            { "3", "HRB400 Φ22", "48" },
+            { "1", "Φ16", "20" },
+            { "2", "Φ20", "35" },
+            { "3", "Φ22", "48" },
         };
 
-        // 数量表：手工绘制（ACadSharp 写 TABLE 实体会损坏 DWG，改用 Line + Text，保证文件正常、表格可见）
-        DrawQuantityTable(
+        var table = TableHelper.CreateTable(
             doc,
-            originX: -120,
-            originY: -20,
+            CadDraw.P(-120, -20),
             data,
-            colWidth: [60, 120, 60],
-            rowHeight: [16, 16, 16, 16],
+            columnWidths: [60, 120, 60],
+            rowHeights: [16, 16, 16, 16, 16],
             textHeight: 5
         );
+
+        TableHelper.MergeCells(table, 0, 0, 0, 2);
+        TableHelper.AddBlockToCell(
+            doc,
+            table,
+            2,
+            1,
+            HRB400Block.Name,
+            blockScale: 0.1,
+            blockSpecification: "16");
+
+        doc.Entities.Add(table);
 
         #endregion
 
@@ -361,241 +327,6 @@ public static partial class GeneratedDraw
 
         // // 图题
         // TitleBlock.Add(doc, "这是一个很长这是一个很长这是一个很长这是一个很长", "1:25", CadDraw.P(0, 0));
-    }
-
-    private static int _tableIndex = 1;
-
-    /// <summary>
-    /// 创建一个 ACadSharp 原生 TABLE。
-    /// 采用与 TableHelper.CreateTable 相同的可行写法：Standard 表格样式 + TABLE 专用匿名 BlockRecord，
-    /// 逐格写入文字（CadValue + Format），单元格样式统一无背景、水平+垂直居中。
-    /// </summary>
-    public static TableEntity CreateTable(
-        CadDocument doc,
-        XYZ insertPoint,
-        string[,] data,
-        double rowHeight = 8.0,
-        double columnWidth = 30.0,
-        double textHeight = 3.5
-    )
-    {
-        int rowCount = data.GetLength(0);
-        int columnCount = data.GetLength(1);
-
-        // 1) 新建"数量表"表格样式（基于 Standard 设计、不改 Standard；数据样式、填充空、外框红/内框绿）
-        var tableStyle = CreateRebarTableStyle(doc);
-
-        // 2) TABLE 专用匿名 BlockRecord
-        var block = new BlockRecord($"*T{_tableIndex++}")
-        {
-            IsAnonymous = true,
-        };
-        doc.BlockRecords.Add(block);
-
-        // 3) 创建 TableEntity（必须挂到匿名 BlockRecord 上）
-        var table = new TableEntity(block)
-        {
-            InsertPoint = insertPoint,
-            HorizontalDirection = XYZ.AxisX,
-            Style = tableStyle,
-        };
-
-        // 4) 整表默认单元格样式：无背景、水平+垂直居中
-        table.CellStyleOverride.HasData = true;
-        table.CellStyleOverride.IsFillColorOn = false;
-        table.CellStyleOverride.CellAlignment = TableStyle.CellAlignmentType.MiddleCenter;
-
-        // 5) 列
-        for (int c = 0; c < columnCount; c++)
-        {
-            table.Columns.Add(
-                new TableEntity.Column
-                {
-                    Name = $"Column{c + 1}",
-                    Width = columnWidth,
-                }
-            );
-        }
-
-        // 6) 行 + 单元格
-        for (int r = 0; r < rowCount; r++)
-        {
-            var row = new TableEntity.Row { Height = rowHeight };
-
-            for (int c = 0; c < columnCount; c++)
-            {
-                var cell = new TableEntity.Cell { Type = TableEntity.CellType.Text };
-
-                // 单元格样式：用自定义样式的数据单元格样式（无背景、居中、带边框）
-                var cellStyle = tableStyle.DataCellStyle;
-                cellStyle.HasData = true;
-                cellStyle.IsFillColorOn = false;
-                cellStyle.CellAlignment = TableStyle.CellAlignmentType.MiddleCenter;
-                cell.Style = cellStyle;
-
-                // 内容：文字值 + 格式
-                var content = new TableEntity.CellContent
-                {
-                    ContentType = TableEntity.TableCellContentType.Value,
-                };
-                content.CadValue.SetValue(data[r, c] ?? string.Empty, CadValueType.String);
-                content.Format.HasData = true;
-                content.Format.TextHeight = textHeight;
-
-                cell.Contents.Add(content);
-                row.Cells.Add(cell);
-            }
-
-            table.Rows.Add(row);
-        }
-
-        return table;
-    }
-
-    /// <summary>
-    /// 新建"数量表"表格样式（完全独立定义，不依赖、不修改 Standard）：
-    /// 单元格统一为数据样式且填充全部为空；文字 JSTI_仿宋、水平垂直居中；
-    /// 边框外框（上下左右）红色、内框（水平/垂直内部线）绿色。
-    /// 已存在同名样式时直接复用（幂等）。
-    /// </summary>
-    private static TableStyle CreateRebarTableStyle(CadDocument doc)
-    {
-        const string styleName = "数量表";
-
-        // 已注册过则直接复用
-        if (doc.TableStyles is not null && doc.TableStyles.TryGet(styleName, out var existing))
-            return existing;
-
-        var textStyle = doc.TextStyle(CadTextStyles.JstiSimsun);
-
-        var style = new TableStyle(styleName)
-        {
-            Description = "支座顶部加强数量钢筋表",
-            HorizontalCellMargin = 1.5,
-            VerticalCellMargin = 1.5,
-        };
-
-        TableStyle.CellStyle CreateDataCellStyle(string name, double textHeight)
-        {
-            var cs = new TableStyle.CellStyle
-            {
-                Name = name,
-                Type = TableStyle.CellStyleType.Cell,
-                CellAlignment = TableStyle.CellAlignmentType.MiddleCenter,
-                TextStyle = textStyle,
-                TextHeight = textHeight,
-                IsFillColorOn = false, // 填充为空
-            };
-
-            // 边框：外框红、内框绿
-            void SetBorder(TableStyle.CellBorder border, Color color)
-            {
-                border.ApplyBorder = true;
-                border.Type = TableStyle.BorderType.Single;
-                border.IsInvisible = false;
-                border.Color = color;
-            }
-
-            SetBorder(cs.TopBorder, Color.Red);
-            SetBorder(cs.BottomBorder, Color.Red);
-            SetBorder(cs.LeftBorder, Color.Red);
-            SetBorder(cs.RightBorder, Color.Red);
-            SetBorder(cs.HorizontalInsideBorder, Color.Green);
-            SetBorder(cs.VerticalInsideBorder, Color.Green);
-
-            return cs;
-        }
-
-        // 表格内容都是数据样式，单元格都是数据
-        var data = CreateDataCellStyle("数量表_数据", 3.5);
-
-        style.CellStyles.Add(data);
-        style.DataCellStyle = data;
-        style.HeaderCellStyle = data;
-        style.TitleCellStyle = data;
-
-        // 注册到文档（文档未初始化表格样式集合时跳过）
-        doc.TableStyles?.TryAdd(style);
-
-        return style;
-    }
-
-    /// <summary>
-    /// 手工绘制数量表：网格线用 CadDraw.Line、单元格文字用 CadDraw.Text（JSTI_仿宋、居中）。
-    /// 外框红色、内框绿色。避免 ACadSharp 写 TABLE 实体导致 DWG 损坏。
-    /// </summary>
-    private static void DrawQuantityTable(
-        CadDocument doc,
-        double originX,
-        double originY,
-        string[,] data,
-        double[] colWidth,
-        double[] rowHeight,
-        double textHeight = 5.0
-    )
-    {
-        int rows = data.GetLength(0);
-        int cols = data.GetLength(1);
-
-        // 列边界
-        var xs = new double[cols + 1];
-        xs[0] = originX;
-        for (int c = 0; c < cols; c++)
-            xs[c + 1] = xs[c] + colWidth[c];
-
-        // 行边界（向下为负）
-        var ys = new double[rows + 1];
-        ys[0] = originY;
-        for (int r = 0; r < rows; r++)
-            ys[r + 1] = ys[r] - rowHeight[r];
-
-        var gridLayer = doc.Layer(CadLayers.B04);
-        var textLayer = doc.Layer(CadLayers.B07);
-
-        void HLine(double x0, double x1, double y, Color color)
-        {
-            var line = CadDraw.Line(CadDraw.P(x0, y, 0), CadDraw.P(x1, y, 0), gridLayer);
-            line.Color = color;
-            doc.Entities.Add(line);
-        }
-
-        void VLine(double x, double y0, double y1, Color color)
-        {
-            var line = CadDraw.Line(CadDraw.P(x, y0, 0), CadDraw.P(x, y1, 0), gridLayer);
-            line.Color = color;
-            doc.Entities.Add(line);
-        }
-
-        // 外框：红
-        HLine(xs[0], xs[cols], ys[0], Color.Red);
-        HLine(xs[0], xs[cols], ys[rows], Color.Red);
-        VLine(xs[0], ys[0], ys[rows], Color.Red);
-        VLine(xs[cols], ys[0], ys[rows], Color.Red);
-
-        // 内框：绿
-        for (int c = 1; c < cols; c++)
-            VLine(xs[c], ys[0], ys[rows], Color.Green);
-        for (int r = 1; r < rows; r++)
-            HLine(xs[0], xs[cols], ys[r], Color.Green);
-
-        // 单元格文字：JSTI_仿宋、水平垂直居中
-        for (int r = 0; r < rows; r++)
-            for (int c = 0; c < cols; c++)
-            {
-                double cx = (xs[c] + xs[c + 1]) / 2;
-                double cy = (ys[r] + ys[r + 1]) / 2;
-                doc.Entities.Add(
-                    CadDraw.Text(
-                        data[r, c],
-                        CadDraw.P(cx, cy, 0),
-                        textHeight,
-                        textLayer,
-                        textStyle: CadTextStyles.JstiSimsun.Name,
-                        horizontalAlignment: TextHorizontalAlignment.Center,
-                        verticalAlignment: TextVerticalAlignmentType.Middle
-                    )
-                );
-            }
     }
 
     private static void DrawMeshⅡ(

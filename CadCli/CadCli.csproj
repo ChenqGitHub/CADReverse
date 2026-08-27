@@ -9,6 +9,6 @@
   <ItemGroup>
     <!-- DwgSharpKit（独立 NuGet 包，ACadSharp 随包带入）：
          发布前用本地源 ../nupkgs；发布后用 nuget.org 的正式版本 -->
-    <PackageReference Include="DwgSharpKit" Version="0.1.0" />
+    <PackageReference Include="DwgSharpKit" Version="0.1.1" />
   </ItemGroup>
 </Project>
