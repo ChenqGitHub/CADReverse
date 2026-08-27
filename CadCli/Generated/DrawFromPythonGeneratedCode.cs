@@ -267,10 +267,11 @@ public static partial class GeneratedDraw
         {
             { "支座顶部加强数量钢筋表", "", "" },
             { "编号", "钢筋规格", "数量" },
-            { "1", "Φ16", "20" },
+            { "1", "", "20" },
             { "2", "Φ20", "35" },
             { "3", "Φ22", "48" },
         };
+        
 
         var table = TableHelper.CreateTable(
             doc,
