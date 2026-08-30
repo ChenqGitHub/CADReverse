@@ -1,8 +1,8 @@
 import argparse
 import math
 
-from pyzwcad import ZwCAD
-from comtypes.gen.ZWCAD import IZcadDimRotated
+from pyautocad import Autocad
+# from comtypes.gen. import IZcadDimRotated
 
 # 标准图层目录：名称 -> CadLayers 常量名（与 DwgSharpKit/Standards/CadLayers.cs 保持一致）。
 # 已知标准层生成 doc.Layer(CadLayers.Bxx) 引用，未知层回退 doc.Layers["..."] 字符串。
@@ -36,6 +36,14 @@ def cs_string(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', '\\"')
 
 
+def normalize_text_rotation(rotation: float) -> float:
+    """将水平文字的 0/180/360 度等价角统一输出为 0。"""
+    angle = float(rotation) % (2 * math.pi)
+    if min(angle, abs(angle - math.pi), abs(angle - 2 * math.pi)) < 1e-6:
+        return 0
+    return float(rotation)
+
+
 def point3(values) -> str:
     """将 ZWCAD 三维点转换为 CadCli 的 CadDraw.P 调用代码。"""
     x = values[0]
@@ -50,8 +58,11 @@ def point2(x: float, y: float) -> str:
 
 
 def vertex2(x: float, y: float, bulge: float = 0) -> str:
-    """生成带 bulge 弧度参数的多段线顶点代码。"""
-    return f"CadDraw.V({fmt_num(x)}, {fmt_num(y)}, bulge: {fmt_num(bulge)})"
+    """生成可直接放入 Rebar.Vertices 的钢筋顶点代码。"""
+    bulge_text = fmt_num(bulge)
+    if float(bulge) == 0:
+        return f"RebarDetail.V({fmt_num(x)}, {fmt_num(y)})"
+    return f'RebarDetail.V({fmt_num(x)}, {fmt_num(y)}, "", {bulge_text})'
 
 
 def emit_line(index: int, ent) -> str:
@@ -83,7 +94,7 @@ def emit_circle(index: int, ent) -> str:
     {layer}));"""
 
 
-def emit_rotated_dimension(index: int, ent: IZcadDimRotated) -> str:
+def emit_rotated_dimension(index: int, ent) -> str:
     """将 ZWCAD 旋转线性标注转换为 CadDraw.RotatedDimension C# 代码。
 
     对应 C# 签名（CadDraw.Dimensions.cs）：
@@ -155,22 +166,18 @@ def get_bulge(ent, vertex_index: int) -> float:
 
 
 def emit_lwpolyline(index: int, ent) -> str:
-    """将二维多段线及其 bulge 参数转换为 CadDraw.Polyline C# 代码。"""
-    layer = layer_ref(ent.Layer)
+    """将二维多段线转换为可直接粘贴到 Rebar.Vertices 的顶点列表。"""
     coords = list(ent.Coordinates)
     vertices = []
     for i in range(0, len(coords), 2):
         vertex_index = i // 2
         vertices.append(vertex2(coords[i], coords[i + 1], get_bulge(ent, vertex_index)))
 
-    vertices_code = ", ".join(vertices)
-    closed = "true" if bool(getattr(ent, "Closed", False)) else "false"
-    elevation = fmt_num(getattr(ent, "Elevation", 0))
-    return f"""doc.Entities.Add(CadDraw.Polyline(
-    [{vertices_code}],
-    {layer},
-    closed: {closed},
-    elevation: {elevation}));"""
+    vertices_code = ",\n    ".join(vertices)
+    closed_note = " // closed polyline" if bool(getattr(ent, "Closed", False)) else ""
+    return f"""[
+    {vertices_code}
+]{closed_note}"""
 
 
 def emit_text(index: int, ent) -> str:
@@ -178,7 +185,7 @@ def emit_text(index: int, ent) -> str:
     layer = layer_ref(ent.Layer)
     value = cs_string(ent.TextString)
     height = fmt_num(ent.Height)
-    rotation = fmt_num(getattr(ent, "Rotation", 0))
+    rotation = fmt_num(normalize_text_rotation(getattr(ent, "Rotation", 0)))
     return f"""doc.Entities.Add(CadDraw.Text(
     "{value}",
     {point3(ent.InsertionPoint)},
@@ -187,14 +194,14 @@ def emit_text(index: int, ent) -> str:
     rotation: {rotation}));"""
 
 
-def iter_selected_objects(zwcad: ZwCAD):
+def iter_selected_objects(zwcad: Autocad):
     """调用 ZWCAD 的屏幕选择，让用户选择需要逆向的图元。"""
     selection = zwcad.get_selection("Select CAD objects to generate C# code")
     for i in range(selection.Count):
         yield selection.Item(i)
 
 
-def iter_source_objects(zwcad: ZwCAD, all_objects: bool):
+def iter_source_objects(zwcad: Autocad, all_objects: bool):
     """根据运行模式返回全图实体或用户选择的实体。"""
     if all_objects:
         yield from zwcad.iter_objects(dont_cast=True)
@@ -215,7 +222,7 @@ def main():
     )
     args = parser.parse_args()
 
-    zwcad = ZwCAD(create_if_not_exists=False)
+    zwcad = Autocad(create_if_not_exists=False)
     emitters = {
         "AcDbLine": emit_line,
         "AcDbArc": emit_arc,
@@ -227,8 +234,13 @@ def main():
         "AcDbText": emit_text,
     }
 
+    print("// 普通图元可粘贴到绘图方法体；AcDbPolyline 输出为 Rebar.Vertices 顶点列表。")
+    print("// 多段线顶点使用 RebarDetail.V(x, y, text, bulge)，不要改成 CadDraw.V。")
     print(
-        "// Paste this code into CadCli.Generated.GeneratedDraw.DrawFromPythonGeneratedCode(CadDocument doc)."
+        "// Paste the generated code into CadCli.Generated.GeneratedDraw.DrawBearingReinforcement(CadDocument doc)"
+    )
+    print(
+        "// or CadCli.Generated.GeneratedDraw.DrawFrameBridgeReinforcement(CadDocument doc)."
     )
     count = 0
     skipped = {}

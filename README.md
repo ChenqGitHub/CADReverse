@@ -37,16 +37,17 @@
 
 ## CadCli（应用）
 
-- `Program.cs`：入口——初始化标准 → 调用 `GeneratedDraw.DrawFromPythonGeneratedCode` → 写出 `reverse-output.dwg`。
+- `Program.cs`：入口——初始化标准 → 逐张调用各绘图方法 → 每张图各写一个独立 DWG（`bearing-reinforcement.dwg` / `frame-bridge-reinforcement.dwg` / `frame-body-rebar-quantity.dwg`）。
 - `Generated/`
-  - `DrawFromPythonGeneratedCode.cs`：Cadpython 生成代码的落点（可手动编辑）。
+  - `BearingReinforcementDrawing.cs`：支座加强钢筋图（Cadpython 生成代码的落点，可手动编辑）。
+  - `FrameBridgeReinforcementDrawing.cs`：框架桥钢筋图（一张 DWG，含两部分：① 参数化大样 N0~N17，每根钢筋用 `Rebar` + `PlaceDetail` 落地：形状+每段标注+引线标注+XData，H1/H2 双参数族；② 框架身钢筋数量表（每延米）：外包矩形 + 顶/底板 + 侧墙、板内纵筋密排、39.9° 斜筋锯齿、中心线与尺寸/编号标注，放在大样下方）。
 
 ## Current Workflow
 
 1. 在 ZWCAD 中通过 Cadpython 选择图元，复制打印出的 C# 代码。
-2. 粘贴进 `CadCli/Generated/DrawFromPythonGeneratedCode.cs` 的方法体。
+2. 粘贴进 `CadCli/Generated/BearingReinforcementDrawing.cs`（支座加强）或 `FrameBridgeReinforcementDrawing.cs`（框架桥）的方法体。
 3. `dotnet run --project CadCli`。
-4. 检查 `CadCli/bin/Debug/net10.0/reverse-output.dwg`。
+4. 检查 `CadCli/bin/Debug/net10.0/` 下的 `bearing-reinforcement.dwg` 与 `frame-bridge-reinforcement.dwg`。
 
 ## 约定
 

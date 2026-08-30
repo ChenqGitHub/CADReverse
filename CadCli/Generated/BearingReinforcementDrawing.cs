@@ -1,8 +1,5 @@
 using ACadSharp;
 using ACadSharp.Entities;
-using ACadSharp.Objects;
-using ACadSharp.Tables;
-using ACadSharp.Tables.Collections;
 using CSMath;
 using DwgSharpKit;
 using DwgSharpKit.Blocks;
@@ -14,7 +11,10 @@ namespace CadCli.Generated;
 
 public static partial class GeneratedDraw
 {
-    public static void DrawFromPythonGeneratedCode(CadDocument doc)
+    /// <summary>
+    /// 支座加强钢筋图（由 Cadpython 生成代码整理，可继续手动编辑）。
+    /// </summary>
+    public static void DrawBearingReinforcement(CadDocument doc)
     {
         #region Ⅰ-Ⅰ截面
 
@@ -263,14 +263,16 @@ public static partial class GeneratedDraw
         // 图题
         TitleBlock.Add(doc, "支座顶部加强数量钢筋表", "", CadDraw.P(0, 0), 1);
 
-        string[,] data =
+        var data = new List<string[]>
         {
-            { "支座顶部加强数量钢筋表", "", "" },
-            { "编号", "钢筋规格", "数量" },
-            { "1", "", "20" },
-            { "2", "Φ20", "35" },
-            { "3", "Φ22", "48" },
+            new[] { "支座顶部加强数量钢筋表", "", "" },
+            new[] { "编号", "钢筋规格", "数量" },
+            new[] { "1", "", "20" },
+            new[] { "2", "20", "35" },
+            new[] { "3", "22", "48" },
         };
+        // 需要加行时直接 data.Add(new[] { "4", "25", "60" });
+        
         
 
         var table = TableHelper.CreateTable(
@@ -278,7 +280,7 @@ public static partial class GeneratedDraw
             CadDraw.P(-120, -20),
             data,
             columnWidths: [60, 120, 60],
-            rowHeights: [16, 16, 16, 16, 16],
+            rowHeights: [.. Enumerable.Repeat(16, data.Count)],
             textHeight: 5
         );
 
@@ -289,8 +291,13 @@ public static partial class GeneratedDraw
             2,
             1,
             HRB400Block.Name,
-            blockScale: 0.1,
-            blockSpecification: "16");
+            attributes: new Dictionary<string, string>
+            {
+                [HRB400Block.GradeTag] = "1",
+                [HRB400Block.SpecTag] = "16",
+            },
+            blockScale: 0.1
+        );
 
         doc.Entities.Add(table);
 

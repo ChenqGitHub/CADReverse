@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.11"
 
 [[package]]
@@ -7,11 +7,11 @@ name = "cadpython"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "pyzwcad" },
+    { name = "pyautocad" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pyzwcad", specifier = ">=0.3.2" }]
+requires-dist = [{ name = "pyautocad", specifier = ">=0.2.0" }]
 
 [[package]]
 name = "comtypes"
@@ -23,10 +23,10 @@ wheels = [
 ]
 
 [[package]]
-name = "pyzwcad"
-version = "0.3.2"
+name = "pyautocad"
+version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "comtypes" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/21/a6/ddda95531acbe7e2ca39ceef915bc3dc7a21d108231968083c557a4743be/pyzwcad-0.3.2.tar.gz", hash = "sha256:afb39a33a53bd71029c95d407f507d7767b90549af0ff9c304f141b843692e2f", size = 32311, upload-time = "2020-03-04T06:45:04.237Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/87/92/05d8b3d37fd50db0a234f6a5959bd398ee2161ba3822cb832af5c6a1f458/pyautocad-0.2.0.zip", hash = "sha256:619de4a7b0e5febe512970ef9c4cd4d24d97e11035f7133f292e643275a95392", size = 45583, upload-time = "2015-12-21T18:18:16.494Z" }
