@@ -7,11 +7,9 @@
 | `Cadpython/` | Python（pyzwcad）读取 ZWCAD 图元，输出可粘贴的 C# 绘图代码。 |
 | `CadCli/` | 控制台应用：运行生成/手写的 C# 代码并写出 DWG。 |
 
-绘图类库 **[DwgSharpKit](https://github.com/ChenqGitHub/DwgSharpKit)** 已独立成仓（NuGet 包 `DwgSharpKit`），本仓库的 `CadCli` 通过包引用使用它。
+绘图类库 `DwgSharpKit/` 现已合并到本仓库，`CadCli` 通过项目引用直接使用源码。待功能稳定后，可再拆分为独立仓库和 NuGet 包。
 
-## DwgSharpKit（独立仓库）
-
-类库源码与发布流程见 [github.com/ChenqGitHub/DwgSharpKit](https://github.com/ChenqGitHub/DwgSharpKit)。
+## DwgSharpKit（本仓库内的类库项目）
 
 - `Standards/`：标准图层（B-01~B-09）/文字样式/标注样式，单一数据源。
 - `Drawing/`：`CadDraw` 绘图原语 + `CadDocumentExtensions`（`doc.Layer(CadLayers.B01)` 等）。
@@ -21,10 +19,10 @@
 
 引用图层/样式一律用常量：`doc.Layer(CadLayers.B03)`、`doc.TextStyle(CadTextStyles.JstiSimsun)`、`doc.DimStyle(CadDimStyles.FangSong1_50)`，避免散落字符串。
 
-## 本地打包与引用
+## 类库引用
 
-- 在 DwgSharpKit 仓库执行 `dotnet pack -c Release -o nupkgs`，把产物拷到本仓库 `nupkgs/`（已含 `acadsharp.3.7.1.nupkg` 供离线还原）。
-- `CadCli/NuGet.config` 已指向本地源 `../nupkgs`；正式发布到 nuget.org 后可切换官方源。
+- `CadCli` 通过 `ProjectReference` 引用 `DwgSharpKit/DwgSharpKit.csproj`。
+- `ACadSharp` 暂时通过本地 NuGet 源还原，待类库稳定后再恢复独立包发布流程。
 
 ## Cadpython
 
@@ -51,5 +49,5 @@
 
 ## 约定
 
-- `CadCli` 只放应用逻辑与生成代码；库代码一律进独立的 [DwgSharpKit](https://github.com/ChenqGitHub/DwgSharpKit) 仓库。
+- `CadCli` 只放应用逻辑与生成代码；类库代码暂时放在本仓库的 `DwgSharpKit/` 项目中。
 - `Cadpython` 生成的代码要求：新标准层先加进 `CadLayers` 并同步 `main.py` 的 `STANDARD_LAYERS` 映射。

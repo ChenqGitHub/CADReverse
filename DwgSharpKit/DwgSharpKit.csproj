@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DwgSharpKit</RootNamespace>
+  </PropertyGroup>
+
+  <!-- NuGet 打包元数据 -->
+  <PropertyGroup>
+    <PackageId>DwgSharpKit</PackageId>
+    <Version>0.1.2</Version>
+    <Authors>Chenq</Authors>
+    <Description>
+      对 ACadSharp 的高层封装（DWG 图纸生成工具箱）：CAD 标准（图层/文字样式/标注样式）+ 绘图原语 +
+      原生表格（Standard 样式、合并单元格、块单元格）+ 常用块（HRB400 钢筋/钢结构断面/标题栏/剖面/折断线）+ 钢筋大样模型（图形、逐段单行文本标注、
+      整根引线标注、属性 XData），配合 CadInitializer 一键初始化，直接写出 DWG 工程图纸。
+    </Description>
+    <PackageTags>CAD;DWG;ACadSharp;Drawing;Rebar;钢筋;桥梁;结构</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/ChenqGitHub/DwgSharpKit</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- 生成 nupkg：dotnet pack DwgSharpKit -c Release -o 输出目录 -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ACadSharp" Version="3.7.1" />
+  </ItemGroup>
+</Project>
