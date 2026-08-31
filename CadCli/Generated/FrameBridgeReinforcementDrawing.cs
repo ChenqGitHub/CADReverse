@@ -60,6 +60,28 @@ public static partial class GeneratedDraw
             RebarLayer = doc.Layer(CadLayers.B01),
             TextLayer = doc.Layer(CadLayers.B07),
         };
+        Rebar n1,
+            n2,
+            n3,
+            n4,
+            n5,
+            n6,
+            n7,
+            n8,
+            n9,
+            n10,
+            n11,
+            n12,
+            n13,
+            n14,
+            n15,
+            n16,
+            n17,
+            n18,
+            n19,
+            n20,
+            n_系筋,
+            n_系筋_s;
 
         // ── 公共几何 ──
         double diag1 = H1 - 2 * d; // 304：H1 族斜段水平/竖直投影
@@ -118,7 +140,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n1 = new Rebar
+            n1 = new Rebar
             {
                 Number = "2N1",
                 Count = 2,
@@ -155,7 +177,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n2 = new Rebar
+            n2 = new Rebar
             {
                 Number = "2N2",
                 Count = 2,
@@ -191,7 +213,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n3 = new Rebar
+            n3 = new Rebar
             {
                 Number = "2N3",
                 Count = 2,
@@ -227,7 +249,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n4 = new Rebar
+            n4 = new Rebar
             {
                 Number = "2N4",
                 Count = 2,
@@ -263,7 +285,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n5 = new Rebar
+            n5 = new Rebar
             {
                 Number = "2N5",
                 Count = 2,
@@ -299,7 +321,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n6 = new Rebar
+            n6 = new Rebar
             {
                 Number = "2N6",
                 Count = 2,
@@ -331,7 +353,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n7 = new Rebar
+            n7 = new Rebar
             {
                 Number = "2N7",
                 Count = 2,
@@ -362,7 +384,7 @@ public static partial class GeneratedDraw
             double half = halfStraight;
             double lx = -half,
                 rx = half;
-            var n8 = new Rebar
+            n8 = new Rebar
             {
                 Number = "2N8",
                 Count = 2,
@@ -385,7 +407,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n9 = new Rebar
+            n9 = new Rebar
             {
                 Number = "2N9",
                 Count = 2,
@@ -408,7 +430,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n10 = new Rebar
+            n10 = new Rebar
             {
                 Number = "16N10",
                 Count = 16,
@@ -431,7 +453,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n11 = new Rebar
+            n11 = new Rebar
             {
                 Number = "8N11",
                 Count = 8,
@@ -458,7 +480,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n12 = new Rebar
+            n12 = new Rebar
             {
                 Number = "2N12",
                 Count = 2,
@@ -494,7 +516,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n13 = new Rebar
+            n13 = new Rebar
             {
                 Number = "2N13",
                 Count = 2,
@@ -530,7 +552,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n14 = new Rebar
+            n14 = new Rebar
             {
                 Number = "2N14",
                 Count = 2,
@@ -566,7 +588,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n15 = new Rebar
+            n15 = new Rebar
             {
                 Number = "2N15",
                 Count = 2,
@@ -602,7 +624,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n16 = new Rebar
+            n16 = new Rebar
             {
                 Number = "2N16",
                 Count = 2,
@@ -638,7 +660,7 @@ public static partial class GeneratedDraw
             double lx = -half,
                 rx = half,
                 fy = -hook;
-            var n17 = new Rebar
+            n17 = new Rebar
             {
                 Number = "2N17",
                 Count = 2,
@@ -668,6 +690,55 @@ public static partial class GeneratedDraw
             n17.PlaceDetail(doc, new XYZ(0, -42000, 0), new XYZ(0, -43100, 0), scale: 50, options);
         }
 
+        // N18：竖向钢筋
+        n18 = new Rebar
+        {
+            Number = "16N18",
+            Count = 16,
+            Diameter = d,
+            Vertices =
+            [
+                RebarDetail.V(159.979871, -401.9),
+                RebarDetail.V(159.979871, -430),
+                RebarDetail.V(34.979871, -430, "", -0.414214),
+                RebarDetail.V(-0.020129, -395),
+                RebarDetail.V(0.020129, 395, "", -0.414214),
+                RebarDetail.V(35.020129, 430),
+                RebarDetail.V(160.020129, 430),
+                RebarDetail.V(160.020129, 401.9),
+            ],
+        };
+
+        // N19：竖向直筋
+        n19 = new Rebar
+        {
+            Number = "24N19",
+            Count = 24,
+            Diameter = d,
+            Vertices =
+            [
+                RebarDetail.V(28.1, 430),
+                RebarDetail.V(0, 430),
+                RebarDetail.V(0, -430),
+                RebarDetail.V(28.1, -430),
+            ],
+        };
+
+        // N19：竖向直筋
+        n20 = new Rebar
+        {
+            Number = "24N20",
+            Count = 24,
+            Diameter = d,
+            Vertices =
+            [
+                RebarDetail.V(28.1, 430),
+                RebarDetail.V(0, 430),
+                RebarDetail.V(0, -430),
+                RebarDetail.V(28.1, -430),
+            ],
+        };
+
         DrawObtuseReinforcementSketch(doc);
 
         #region  框架桥结构
@@ -679,6 +750,7 @@ public static partial class GeneratedDraw
                         CadDraw.V(1247.25, -870),
                         CadDraw.V(1247.25, 0),
                         CadDraw.V(-1247.25, 0),
+                        CadDraw.V(-1247.25, -870),
                     ],
                     doc.Layer(CadLayers.B04)
                 ),
@@ -692,13 +764,137 @@ public static partial class GeneratedDraw
                         CadDraw.V(1091.35, -160),
                         CadDraw.V(857.505, -100),
                         CadDraw.V(-857.505, -100),
+                        CadDraw.V(-1091.35, -160),
                     ],
                     doc.Layer(CadLayers.B04)
                 ),
             ]
         );
 
-        
+        // 将 N1~N10 无标注钢筋统一插入框架桥结构图指定位置。
+        n1.Place(doc, new XYZ(0, -95, 0));
+        n2.Place(doc, new XYZ(0, -95, 0));
+        n3.Place(doc, new XYZ(0, -95, 0));
+        n4.Place(doc, new XYZ(0, -95, 0));
+        n5.Place(doc, new XYZ(0, -95, 0));
+        n6.Place(doc, new XYZ(0, -95, 0));
+        n7.Place(doc, new XYZ(0, -95, 0));
+        n8.Place(doc, new XYZ(0, -95, 0));
+        n9.Place(doc, new XYZ(0, -95, 0));
+        n10.Place(doc, new XYZ(0, -95, 0));
+        n11.Place(doc, new XYZ(0, -755, 0));
+        n12.Place(doc, new XYZ(0, -755, 0));
+        n13.Place(doc, new XYZ(0, -755, 0));
+        n14.Place(doc, new XYZ(0, -755, 0));
+        n15.Place(doc, new XYZ(0, -755, 0));
+        n16.Place(doc, new XYZ(0, -755, 0));
+        n17.Place(doc, new XYZ(0, -755, 0));
+
+        n18.Place(doc, new XYZ(-1242.25, -435, 0));
+        n19.Place(doc, new XYZ(-1242.25, -435, 0));
+        n20.Place(doc, new XYZ(-1096.35, -435, 0));
+        n18.Place(
+            doc,
+            new XYZ(1242.25, -435, 0),
+            transform: new PlaceTransform() { Rotation = Math.PI }
+        );
+        n19.Place(
+            doc,
+            new XYZ(1242.25, -435, 0),
+            transform: new PlaceTransform() { Rotation = Math.PI }
+        );
+        n20.Place(
+            doc,
+            new XYZ(1096.35, -435, 0),
+            transform: new PlaceTransform() { Rotation = Math.PI }
+        );
+
+        // 顶底系筋
+        var lines = new List<Entity>();
+        lines.AddRange(
+            CadDraw.LinesBetweenBoundaries(
+                CadDraw.Polyline([new XY(-1083, 0), new XY(0, 0)], doc.Layer(CadLayers.B01)),
+                CadDraw.Polyline(
+                    [new XY(-1083, -157.6), new(-857.505, -100), new(0, -100)],
+                    doc.Layer(CadLayers.B01)
+                ),
+                -1083,
+                0,
+                12.5,
+                doc.Layer(CadLayers.B01)
+            )
+        );
+        lines.AddRange(
+            CadDraw.LinesBetweenBoundaries(
+                CadDraw.Polyline(
+                    [new XY(-1083, 0 - 870), new XY(0, 0 - 870)],
+                    doc.Layer(CadLayers.B01)
+                ),
+                CadDraw.Polyline(
+                    [new XY(-1083, -725.3561), new(-1044.5810, -750.0000), new(0, -750)],
+                    doc.Layer(CadLayers.B01)
+                ),
+                -1083,
+                0,
+                12.5,
+                doc.Layer(CadLayers.B01)
+            )
+        );
+
+        doc.AddEntities(lines);
+        doc.AddMirroredAcrossVertical(lines);
+
+        // 钢筋断面
+
+        var sections = new List<Entity>();
+        for (int i = 0; i < 53; i++)
+        {
+            var x = 1239.25 + i * 12.5;
+            sections.Add(SteelSection.Insert(doc, new XYZ(x, -8, 0)));
+            sections.Add(SteelSection.Insert(doc, new XYZ(x, -870 + 8, 0)));
+        }
+
+        sections.AddRange(
+            CadDraw.EntityArrayAlongPolyline(
+                SteelSection.Insert(doc),
+                CadDraw.Polyline(
+                    [new XY(-1083, -725.3561), new(-1044.5810, -750.0000), new(0, -750)],
+                    doc.Layer(CadLayers.B01)
+                ),
+                12.5,
+                followPath: true
+            )
+        );
+        sections.AddRange(
+            CadDraw.EntityArrayAlongPolyline(
+                SteelSection.Insert(doc),
+                CadDraw.Polyline(
+                    [new XY(-1083, -157.6), new(-857.505, -100), new(0, -100)],
+                    doc.Layer(CadLayers.B01)
+                ),
+                12.5,
+                followPath: true
+            )
+        );
+
+        doc.AddEntities(sections);
+        doc.AddMirroredAcrossVertical(sections);
+
+        // 左右系筋
+        var lines2 = new List<Entity>();
+        lines2.AddRange(
+            CadDraw.EntityArray(
+                CadDraw.Line(
+                    new XYZ(-1242.2531, -100.0000, 0),
+                    new XYZ(-1242.2531 + 145.9, -100.0000, 0),
+                    doc.Layer(CadLayers.B01)
+                ),
+                new XYZ(0, -12.5, 0),
+                53
+            )
+        );
+        doc.AddEntities(lines2);
+        doc.AddMirroredAcrossVertical(lines2);
 
         #endregion
 
@@ -706,9 +902,25 @@ public static partial class GeneratedDraw
         {
             new[] { "位置", "编号", "D", "L1", "H", "L" },
             new[] { "顶板", "N23", "28", "102", "H1-2d", "H1-2d+160" },
-            new[] { "顶板", "N23-1~18", "28", "102", "(H1-2d)~(H1+y1-2d)", "(H1-2d+160)~(H1+y1-2d+160)" },
+            new[]
+            {
+                "顶板",
+                "N23-1~18",
+                "28",
+                "102",
+                "(H1-2d)~(H1+y1-2d)",
+                "(H1-2d+160)~(H1+y1-2d+160)",
+            },
             new[] { "底板", "N24", "28", "102", "H2-2d", "H2-2d+160" },
-            new[] { "底板", "N24-1~3", "28", "102", "(H2-2d)~(H2+y2-2d)", "(H2-2d+160)~(H2+y2-2d+160)" },
+            new[]
+            {
+                "底板",
+                "N24-1~3",
+                "28",
+                "102",
+                "(H2-2d)~(H2+y2-2d)",
+                "(H2-2d+160)~(H2+y2-2d+160)",
+            },
             new[] { "侧墙", "N25", "28", "102", "a/sinα-2c", "a/sinα-2c+160" },
         };
         TitleBlock.Add(doc, "系筋尺寸表", "", CadDraw.P(-12000, -51000), 20);
@@ -724,7 +936,17 @@ public static partial class GeneratedDraw
 
         var obtuseRebarData = new List<string[]>
         {
-            new[] { "编号", "直径(mm)", "张数", "每根长(mm)", "总长(m)", "合计长(m)", "单位重(kg/m)", "总重(kg)" },
+            new[]
+            {
+                "编号",
+                "直径(mm)",
+                "张数",
+                "每根长(mm)",
+                "总长(m)",
+                "合计长(m)",
+                "单位重(kg/m)",
+                "总重(kg)",
+            },
             new[] { "N27", "25", "31×4", "2500", "310.0", "625.0", "3.853", "2408.12" },
             new[] { "N28", "25", "21×4", "3750", "315.0", "", "", "" },
         };
@@ -787,9 +1009,27 @@ public static partial class GeneratedDraw
             rowHeights: [.. Enumerable.Repeat(650.0, frameRebarData.Count)],
             textHeight: 210
         );
-        TableHelper.MergeCells(frameRebarTable, frameRebarData.Count - 3, 0, frameRebarData.Count - 3, 5);
-        TableHelper.MergeCells(frameRebarTable, frameRebarData.Count - 2, 0, frameRebarData.Count - 2, 5);
-        TableHelper.MergeCells(frameRebarTable, frameRebarData.Count - 1, 0, frameRebarData.Count - 1, 5);
+        TableHelper.MergeCells(
+            frameRebarTable,
+            frameRebarData.Count - 3,
+            0,
+            frameRebarData.Count - 3,
+            5
+        );
+        TableHelper.MergeCells(
+            frameRebarTable,
+            frameRebarData.Count - 2,
+            0,
+            frameRebarData.Count - 2,
+            5
+        );
+        TableHelper.MergeCells(
+            frameRebarTable,
+            frameRebarData.Count - 1,
+            0,
+            frameRebarData.Count - 1,
+            5
+        );
         doc.Entities.Add(frameRebarTable);
     }
 
@@ -799,45 +1039,110 @@ public static partial class GeneratedDraw
         var dim = doc.Layer(CadLayers.B03);
         var text = doc.Layer(CadLayers.B07);
 
-        double ox = 30000, oy = 12000;
-        double top = 17000, bottom = 6500, right = 18000;
+        double ox = 30000,
+            oy = 12000;
+        double top = 17000,
+            bottom = 6500,
+            right = 18000;
 
-        TitleBlock.Add(doc, "框架顶板上部和底板下部边墙钝角加强钢筋布置示意图", "", CadDraw.P(ox + 9000, oy + 12500), 18);
+        TitleBlock.Add(
+            doc,
+            "框架顶板上部和底板下部边墙钝角加强钢筋布置示意图",
+            "",
+            CadDraw.P(ox + 9000, oy + 12500),
+            18
+        );
 
         // 绿色外轮廓与边墙折线。
-        doc.AddEntities<Entity>([
-            CadDraw.Line(CadDraw.P(ox - 1000, oy + bottom), CadDraw.P(ox + 900, oy + top), dim),
-            CadDraw.Line(CadDraw.P(ox + 900, oy + top), CadDraw.P(ox + right, oy + top), dim),
-            CadDraw.Line(CadDraw.P(ox - 1000, oy + bottom), CadDraw.P(ox + right - 1200, oy + bottom), dim),
-            CadDraw.Line(CadDraw.P(ox + right - 1200, oy + bottom), CadDraw.P(ox + right, oy + top), dim),
-        ]);
+        doc.AddEntities<Entity>(
+            [
+                CadDraw.Line(CadDraw.P(ox - 1000, oy + bottom), CadDraw.P(ox + 900, oy + top), dim),
+                CadDraw.Line(CadDraw.P(ox + 900, oy + top), CadDraw.P(ox + right, oy + top), dim),
+                CadDraw.Line(
+                    CadDraw.P(ox - 1000, oy + bottom),
+                    CadDraw.P(ox + right - 1200, oy + bottom),
+                    dim
+                ),
+                CadDraw.Line(
+                    CadDraw.P(ox + right - 1200, oy + bottom),
+                    CadDraw.P(ox + right, oy + top),
+                    dim
+                ),
+            ]
+        );
 
         // 红色板内斜向钢筋网格。
         for (double x = ox - 700; x < ox + right; x += 650)
         {
             double y0 = oy + bottom;
             double y1 = oy + top;
-            doc.Entities.Add(CadDraw.Line(CadDraw.P(x, y0), CadDraw.P(x + (top - bottom) * 1.15, y1), steel));
+            doc.Entities.Add(
+                CadDraw.Line(CadDraw.P(x, y0), CadDraw.P(x + (top - bottom) * 1.15, y1), steel)
+            );
         }
         for (double y = oy + bottom + 500; y < oy + top; y += 650)
         {
             double offset = (y - (oy + bottom)) * 1.15;
-            doc.Entities.Add(CadDraw.Line(CadDraw.P(ox - 600 + offset, y), CadDraw.P(ox + right - 600 + offset, y), steel));
+            doc.Entities.Add(
+                CadDraw.Line(
+                    CadDraw.P(ox - 600 + offset, y),
+                    CadDraw.P(ox + right - 600 + offset, y),
+                    steel
+                )
+            );
         }
 
         // 绿色尺寸与说明。
-        doc.Entities.Add(CadDraw.RotatedDimension(
-            CadDraw.P(ox + 7000, oy + top), CadDraw.P(ox + 16000, oy + top),
-            CadDraw.P(ox + 7000, oy + top + 900), dim, "30×12.5cm"));
-        doc.Entities.Add(CadDraw.RotatedDimension(
-            CadDraw.P(ox - 1000, oy + bottom), CadDraw.P(ox - 1000, oy + top),
-            CadDraw.P(ox - 2200, oy + bottom), dim, "20×12.5cm"));
-        doc.Entities.Add(CadDraw.Line(CadDraw.P(ox + 4200, oy + top - 2500), CadDraw.P(ox + 5600, oy + top - 2500), dim));
-        doc.Entities.Add(CadDraw.Line(CadDraw.P(ox + 5600, oy + top - 2500), CadDraw.P(ox + 6700, oy + top - 1900), dim));
+        doc.Entities.Add(
+            CadDraw.RotatedDimension(
+                CadDraw.P(ox + 7000, oy + top),
+                CadDraw.P(ox + 16000, oy + top),
+                CadDraw.P(ox + 7000, oy + top + 900),
+                dim,
+                "30×12.5cm"
+            )
+        );
+        doc.Entities.Add(
+            CadDraw.RotatedDimension(
+                CadDraw.P(ox - 1000, oy + bottom),
+                CadDraw.P(ox - 1000, oy + top),
+                CadDraw.P(ox - 2200, oy + bottom),
+                dim,
+                "20×12.5cm"
+            )
+        );
+        doc.Entities.Add(
+            CadDraw.Line(
+                CadDraw.P(ox + 4200, oy + top - 2500),
+                CadDraw.P(ox + 5600, oy + top - 2500),
+                dim
+            )
+        );
+        doc.Entities.Add(
+            CadDraw.Line(
+                CadDraw.P(ox + 5600, oy + top - 2500),
+                CadDraw.P(ox + 6700, oy + top - 1900),
+                dim
+            )
+        );
         doc.Entities.Add(CadDraw.Text("N27", CadDraw.P(ox + 3600, oy + top - 2500), TextH, text));
-        doc.Entities.Add(CadDraw.Line(CadDraw.P(ox + 2200, oy + bottom), CadDraw.P(ox + 1200, oy + bottom - 900), dim));
-        doc.Entities.Add(CadDraw.Line(CadDraw.P(ox + 1200, oy + bottom - 900), CadDraw.P(ox + 500, oy + bottom - 900), dim));
+        doc.Entities.Add(
+            CadDraw.Line(
+                CadDraw.P(ox + 2200, oy + bottom),
+                CadDraw.P(ox + 1200, oy + bottom - 900),
+                dim
+            )
+        );
+        doc.Entities.Add(
+            CadDraw.Line(
+                CadDraw.P(ox + 1200, oy + bottom - 900),
+                CadDraw.P(ox + 500, oy + bottom - 900),
+                dim
+            )
+        );
         doc.Entities.Add(CadDraw.Text("N28", CadDraw.P(ox + 600, oy + bottom - 900), TextH, text));
-        doc.Entities.Add(CadDraw.Text("边墙", CadDraw.P(ox - 1800, oy + bottom + 500), TextH, text));
+        doc.Entities.Add(
+            CadDraw.Text("边墙", CadDraw.P(ox - 1800, oy + bottom + 500), TextH, text)
+        );
     }
 }
