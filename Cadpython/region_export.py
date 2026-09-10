@@ -41,6 +41,14 @@ def _point(value: Any) -> list[float] | None:
         return None
 
 
+def _first_point(entity: Any, property_names: tuple[str, ...]) -> list[float] | None:
+    for property_name in property_names:
+        point = _point(_get(entity, property_name))
+        if point is not None:
+            return point
+    return None
+
+
 def _bbox(entity: Any) -> dict[str, list[float]] | None:
     try:
         lower, upper = entity.GetBoundingBox()
@@ -120,6 +128,31 @@ def _read_entity(entity: Any, index: int) -> dict[str, Any]:
             "attachment_point": _get(entity, "AttachmentPoint"),
             "width": _get(entity, "Width"),
         }
+    elif name == "AcDbRotatedDimension":
+        geometry = {
+            "text": _get(entity, "TextOverride", ""),
+            "measurement": _get(entity, "Measurement"),
+            "text_position": _point(_get(entity, "TextPosition")),
+            "start_point": _first_point(
+                entity, ("ExtLine1Point", "ExtensionLine1Point", "ExtensionLine1StartPoint")
+            ),
+            "end_point": _first_point(
+                entity, ("ExtLine2Point", "ExtensionLine2Point", "ExtensionLine2StartPoint")
+            ),
+            "dimension_line_point": _first_point(entity, ("DimLinePoint",)),
+            "rotation": _get(entity, "Rotation"),
+            "dimension_style": _get(entity, "StyleName"),
+        }
+        for property_name in (
+            "ExtLine1Point", "ExtLine2Point",
+            "ExtensionLine1Point", "ExtensionLine2Point",
+            "ExtensionLine1StartPoint", "ExtensionLine1EndPoint",
+            "ExtensionLine2StartPoint", "ExtensionLine2EndPoint",
+            "DimLinePoint",
+        ):
+            point = _point(_get(entity, property_name))
+            if point is not None:
+                geometry[property_name] = point
     elif "Dimension" in name:
         geometry = {
             "text": _get(entity, "TextOverride", ""),

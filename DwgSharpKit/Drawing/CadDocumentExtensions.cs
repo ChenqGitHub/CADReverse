@@ -24,27 +24,6 @@ namespace DwgSharpKit
         ) => AddTransformed(doc, move, templates, 1, 0, null, onCopy);
 
         /// <summary>
-        /// 将实体关于竖直镜像轴 x=axisX 镜像，并把镜像副本加入文档。
-        /// 原实体不修改，也不会重复加入文档。
-        /// </summary>
-        public static void AddMirroredAcrossVertical(
-            this CadDocument doc,
-            IEnumerable<Entity> templates,
-            double axisX = 0,
-            Action<Entity>? onCopy = null
-        )
-        {
-            var pivot = new CSMath.XYZ(axisX, 0, 0);
-            foreach (var template in templates)
-            {
-                var copy = (Entity)template.Clone();
-                copy.ApplyScaling(new CSMath.XYZ(-1, 1, 1), pivot);
-                onCopy?.Invoke(copy);
-                doc.Entities.Add(copy);
-            }
-        }
-
-        /// <summary>
         /// 整组变换后写入文档：对每个模板克隆体依次做 缩放(绕 pivot)→旋转(绕 Z 轴，过 pivot)→平移(move)，
         /// 再调用 onCopy 并加入文档。与 <see cref="AddTranslated"/> 的区别是多了缩放与旋转（默认恒等时行为一致）。
         /// </summary>

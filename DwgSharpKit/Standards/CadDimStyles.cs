@@ -35,7 +35,7 @@ public static class CadDimStyles
     );
     public static readonly CadDimStyleDef FangSong1_50 = new(
         "仿宋 1：50",
-        50,
+        10,
         2.5,
         1,
         CadTextStyles.JstiSimsun.Name,
@@ -55,7 +55,7 @@ public static class CadDimStyles
     );
     public static readonly CadDimStyleDef NonFangSong1_50 = new(
         "非仿宋 1：50",
-        50,
+        10,
         3.0,
         1,
         CadTextStyles.JstiNonSimsun.Name,
