@@ -180,17 +180,6 @@ public sealed class Rebar
         };
     }
 
-    /// <summary>按顶点几何求和（直线段；bulge 段按弦长计，与 RebarDetail 标注口径一致）</summary>
-    private double GeometryLength()
-    {
-        double sum = 0;
-        for (int i = 0; i + 1 < Vertices.Count; i++)
-        {
-            var a = Vertices[i].Point;
-            var b = Vertices[i + 1].Point;
-            double dx = b.X - a.X, dy = b.Y - a.Y;
-            sum += Math.Sqrt(dx * dx + dy * dy);
-        }
-        return sum;
-    }
+    /// <summary>按 Shape 多段线的各段长度求和，包含 Bulge 圆弧长度</summary>
+    private double GeometryLength() => RebarDetail.PolylineLength(Vertices);
 }

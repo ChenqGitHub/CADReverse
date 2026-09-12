@@ -1,6 +1,5 @@
 using ACadSharp;
 using ACadSharp.Entities;
-using ACadSharp.Tables;
 using CSMath;
 using DwgSharpKit;
 using DwgSharpKit.Blocks;
@@ -21,8 +20,8 @@ public static partial class GeneratedDraw
     // PlaceDetail 自动完成：形状多段线 + 每段标注 + 引线标注(编号/直径/L=公式) + XData。
     // 端部 R350 圆角直接写在顶点 Bulge 上（RebarDetail.Add 会渲染凸度），
     // 不再用单独的 CadDraw.Arc 补画。
-    // 双参数族：H1 族（断面 Ⅲ-d+300，斜段投影 304）与 H2 族（断面 H2-d+100，斜段投影 320）。
-    // 图中所有英文字母(A / α / H1 / H2 / d / c)均为参数，先给定假定值。
+    // 双参数族：FrameTopSlabThickness 族（断面 Ⅲ-d+300，斜段投影 304）与 FrameBottomSlabThickness 族（断面 FrameBottomSlabThickness-d+100，斜段投影 320）。
+    // 图中所有英文字母(α / FrameTopSlabThickness / FrameBottomSlabThickness / d / SideCoverThickness)均为参数，先给定假定值。
     // ────────────────────────────────────────────────────────────────
 
     /// <summary>
@@ -35,29 +34,55 @@ public static partial class GeneratedDraw
     /// </summary>
     private static readonly double Bulge45Degrees = Math.Tan(Math.PI / 16);
 
-    private const double Alpha = Math.PI / 4; // α = 45°
-    private const double d = 28; // 钢筋直径
-    private const double c = 50; // 保护层
+    private static readonly double Sin45 = Math.Sin(Math.PI / 4);
 
-    private const double Hook = 900; // 端部竖向弯钩高
-    private const double Foot = 328; // 端部水平段
-    private const double FilletR = 350; // 端部圆角 R350
-    private static readonly double FilletBulge = -Bulge90Degrees; // 90° 圆角凸度
-    private const double TopStub = 275; // 斜段两侧短平段
-    private const double Center = 4000; // 中部下平段
+    private const double d = 28; // 钢筋直径
+
+    /// <summary>
+    /// 左右两侧保护层厚（cm）
+    /// </summary>
+    private const double SideCoverThickness = 5; // 左右两侧保护层厚（cm）
+
+    /// <summary>
+    /// 上下顶底板保护层厚（cm）
+    /// </summary>
+    private const double TopBottomCoverThickness = 5; // 上下顶底板保护层厚（cm）
+
+    /// <summary>
+    /// 顶板钢筋下弯段竖向投影长度 = FrameTopSlabThickness - 2 * TopBottomCoverThickness
+    /// </summary>
+    private static readonly double TopSlabRebarDrop =
+        FrameTopSlabThickness - 2 * TopBottomCoverThickness;
+
+    /// <summary>
+    /// 底板钢筋下弯段竖向投影长度 = FrameBottomSlabThickness - 2 * TopBottomCoverThickness
+    /// </summary>
+    private static readonly double BottomSlabRebarDrop =
+        FrameBottomSlabThickness - 2 * TopBottomCoverThickness;
+
+    /// <summary>
+    /// 顶板钢筋立腿总长 = FrameTopSlabThickness - TopBottomCoverThickness + 300
+    /// </summary>
+    private static readonly double TopSlabRebarLegTotal =
+        FrameTopSlabThickness - TopBottomCoverThickness + 30;
+
+    /// <summary>
+    /// 底板钢筋立腿总长 = FrameBottomSlabThickness - TopBottomCoverThickness + 100
+    /// </summary>
+    private static readonly double BottomSlabRebarLegTotal =
+        FrameBottomSlabThickness - TopBottomCoverThickness + 10;
+
+    private const double EndHorizontalRun = 32.8; // 端部水平段
+    private const double FilletR = 35; // 端部圆角 R350
+    private static readonly double Fillet45Dx = Math.Sqrt(FilletR * FilletR / 2);
+    private static readonly double Fillet45Dy = FilletR - Fillet45Dx;
+
+    private const double EndStraightLeg = 32.8;
 
     private const double TextH = 25; // 标注字高
     private const double DimOffset = 20; // 尺寸文字相对线偏移
 
-    private const string SectionLabel1 = "Ⅲ-d+300"; // H1 族端部断面
-    private const string SectionLabel2 = "H2-d+100"; // H2 族端部断面
-
     // 框架桥结构图边框参数。
-    /// <summary>
-    /// 钢筋保护层厚度
-    /// </summary>
-    private const double FrameCover = 5;
-
     /// <summary>
     /// 钢筋与边框之间的附加间距
     /// </summary>
@@ -94,9 +119,19 @@ public static partial class GeneratedDraw
     private const double FrameAngle = 39.9;
 
     /// <summary>
+    /// 框架结构图的绘制比例，1:10
+    /// </summary>
+    private const double DetailUnit = 10;
+
+    /// <summary>
     /// 夹角的正弦值
     /// </summary>
     private static readonly double FrameAngleSin = Math.Sin(FrameAngle * Math.PI / 180);
+
+    /// <summary>
+    /// 框架结构图在斜墙方向的半宽度
+    /// </summary>
+    private static readonly double FrameHalfWidthOnSlope = FrameWidth / FrameAngleSin / 2;
 
     /// <summary>
     /// 顶板倒角竖向高度
@@ -122,25 +157,21 @@ public static partial class GeneratedDraw
     /// 外侧钢筋在斜墙方向的横向位置
     /// </summary>
     private static readonly double FrameOuterRebarX =
-        FrameWidth / 2 / FrameAngleSin - FrameCover - FrameRebarSpacing;
+        FrameHalfWidthOnSlope - SideCoverThickness - FrameRebarSpacing;
 
     /// <summary>
     /// 内侧钢筋在斜墙方向的横向位置
     /// </summary>
     private static readonly double FrameInnerRebarX =
-        (FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin + FrameCover + FrameRebarSpacing;
-
-    /// <summary>
-    /// N18、N19 钢筋在斜墙方向的插入位置
-    /// </summary>
-    private static readonly double FrameOuterRebarPlacementX =
-        FrameWidth / 2 / FrameAngleSin - FrameCover;
+        (FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin
+        + SideCoverThickness
+        + FrameRebarSpacing;
 
     /// <summary>
     /// N20 钢筋在斜墙方向的插入位置
     /// </summary>
     private static readonly double FrameInnerRebarPlacementX =
-        (FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin + FrameCover;
+        (FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin + SideCoverThickness;
 
     /// <summary>
     /// 框架主体中部相对结构图原点的竖向中心位置
@@ -153,7 +184,7 @@ public static partial class GeneratedDraw
     /// N10、N12~N17 钢筋在底板方向的插入位置
     /// </summary>
     private static readonly double FrameBottomRebarPlacementY =
-        -FrameHeight + FrameBottomSlabThickness - FrameCover;
+        -FrameHeight + FrameBottomSlabThickness - SideCoverThickness;
 
     /// <summary>
     /// 一个实体的等间距阵列规格。
@@ -201,679 +232,1066 @@ public static partial class GeneratedDraw
             n18,
             n19,
             n20,
-            n0,
-            n_系筋_s;
-
-        // ── 公共几何 ──
-        double diag1 = FrameTopSlabThickness - 2 * d; // 顶板厚度族斜段水平/竖直投影
-        double diag2 = FrameBottomSlabThickness - 2 * d; // 底板厚度族斜段水平/竖直投影
-        double ts = TopStub; // 275
-        double m = Center; // 4000：中部下平段
-        double hook = Hook; // 900
-
-        double lowEndL = -m / 2;
-        double lowEndR = m / 2;
-
-        double tsxStartL1 = -(m / 2 + 2 * ts + diag1);
-        double tsxEndL1 = -(m / 2 + ts + diag1);
-        double diagBotL1 = -(m / 2 + ts);
-        double diagBotR1 = +(m / 2 + ts);
-        double tsxEndR1 = +(m / 2 + ts + diag1);
-        double tsxStartR1 = +(m / 2 + 2 * ts + diag1);
-
-        double tsxStartL2 = -(m / 2 + 2 * ts + diag2);
-        double tsxEndL2 = -(m / 2 + ts + diag2);
-        double diagBotL2 = -(m / 2 + ts);
-        double diagBotR2 = +(m / 2 + ts);
-        double tsxEndR2 = +(m / 2 + ts + diag2);
-        double tsxStartR2 = +(m / 2 + 2 * ts + diag2);
-
-        // N8~N11 直线筋宽度 = H2 族最宽下折筋（N12，每侧净长 6045）对齐
-        double halfStraight = 6045 + m / 2 + 2 * ts + diag2;
+            n0;
 
         // N0：直线筋（顶板上层），8N0
         {
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = TopSlabRebarLegTotal + FilletR;
             n0 = new Rebar
             {
                 Number = "8N0",
                 Count = 8,
                 Diameter = d,
-                SubstituteLength = "A/sinα-2c+3556",
                 Vertices =
                 [
-                    RebarDetail.V(
-                        -(FrameOuterRebarPlacementX - d),
-                        -(FrameBodyCenterY - FrameTopSlabThickness - FrameCover) / 2
-                    ),
-                    RebarDetail.V(
-                        -FrameOuterRebarPlacementX,
-                        -(FrameBodyCenterY - FrameTopSlabThickness - FrameCover) / 2
-                    ),
-                    RebarDetail.V(-FrameOuterRebarPlacementX, -c, bulge: -Bulge90Degrees),
-                    RebarDetail.V(-(FrameOuterRebarPlacementX - c), 0),
-                    RebarDetail.V(FrameOuterRebarPlacementX - c, 0, bulge: -Bulge90Degrees),
-                    RebarDetail.V(FrameOuterRebarPlacementX, -c),
-                    RebarDetail.V(
-                        FrameOuterRebarPlacementX,
-                        -(FrameBodyCenterY - FrameTopSlabThickness - FrameCover) / 2
-                    ),
-                    RebarDetail.V(
-                        FrameOuterRebarPlacementX - d,
-                        -(FrameBodyCenterY - FrameTopSlabThickness - FrameCover) / 2
-                    ),
+                    RebarDetail.V(-x + EndHorizontalRun, -y, DetailUnit),
+                    RebarDetail.V(-x, -y, DetailUnit),
+                    RebarDetail.V(-x, -FilletR, DetailUnit, -Bulge90Degrees),
+                    RebarDetail.V(-x + FilletR, 0, DetailUnit),
+                    RebarDetail.V(x - FilletR, 0, DetailUnit, -Bulge90Degrees),
+                    RebarDetail.V(x, -FilletR, DetailUnit),
+                    RebarDetail.V(x, -y, DetailUnit),
+                    RebarDetail.V(x - EndHorizontalRun, -y, DetailUnit),
                 ],
             };
+            n0.SubstituteLength = $"{n0.Length * DetailUnit:0.0}";
             n0.PlaceDetail(doc, new XYZ(0, 43000, 0), new XYZ(0, 42900, 0), scale: 10, options);
         }
 
-        // N1：下折筋，每侧净长 8143
+        // N1：下折筋（顶板外层下折至内层，两端下弯）。图中每段文本 = 该段 1:1 实际线长，
+        // 大样按 1:10 建模，故顶点用 DetailV 换算坐标、标注文本仍写实际长度：
+        //   端部水平段 328、立腿 FrameTopSlabThickness-TopBottomCoverThickness+300（其中直线段 = 立腿总长 - R350）、顶部平段 8143、
+        //   斜段两侧短平段 275、斜段 (FrameTopSlabThickness-2p)/sin45°-304、中部下平段 FrameWidth/FrameAngleSin/sinα-2c-2(FrameTopSlabThickness-2p)-17666。
+        // 顶点坐标不再逐个建变量，而是在 Vertices 里按尺寸链内联：x 自端部立腿起向右累加、
+        // y 自端部水平段起向上累加；斜段两端各一个 R350 的 45° 过渡圆角（水平投影 R·sinα、
+        // 竖向投影 R(1-cosα)），中部下平段跨对称轴、左端即 -mid/2。
         {
-            double half = 8143 + m / 2 + 2 * ts + diag1;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            // 小弧线
+            var leftmid = 814.3;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = TopSlabRebarDrop - TopSlabRebarLegTotal - FilletR;
+            var x1 =
+                x
+                - FilletR
+                - leftmid
+                - Fillet45Dx
+                - (TopSlabRebarDrop - 2 * Fillet45Dy)
+                - Fillet45Dx;
+
             n1 = new Rebar
             {
                 Number = "2N1",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2d+2(H1-2d)sin45° +19134",
                 Vertices =
                 [
-                    RebarDetail.V(-1242.25, -70),
-                    RebarDetail.V(-1214.15, -70),
-                    RebarDetail.V(-1242.25, -70),
-                    RebarDetail.V(-1242.25, 55, "", -Bulge90Degrees),
-                    RebarDetail.V(-1207.25, 90),
-                    RebarDetail.V(-392.920324, 90, "", -0.174651),
-                    RebarDetail.V(-365.183773, 79.236551),
-                    RebarDetail.V(-297.223611, 11.276389, "", 0.198912),
-                    RebarDetail.V(-270, 0),
-                    RebarDetail.V(270, 0, "", 0.198912),
-                    RebarDetail.V(297.223611, 11.276389),
-                    RebarDetail.V(365.183773, 79.236551, "", -0.174651),
-                    RebarDetail.V(392.920324, 90),
-                    RebarDetail.V(1207.25, 90, "", -Bulge90Degrees),
-                    RebarDetail.V(1242.25, 55),
-                    RebarDetail.V(1242.25, -70),
-                    RebarDetail.V(1214.15, -70),
+                    RebarDetail.V(-x + EndHorizontalRun, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit),
+                    RebarDetail.V(-x, y + TopSlabRebarLegTotal, DetailUnit, -Bulge90Degrees), // 立腿直线段
+                    RebarDetail.V(-x + FilletR, TopSlabRebarDrop, DetailUnit), // 端部 R350 圆角
+                    RebarDetail.V(
+                        -x + FilletR + leftmid,
+                        TopSlabRebarDrop,
+                        DetailUnit,
+                        -Bulge45Degrees
+                    ), // 顶部平段
+                    RebarDetail.V(
+                        -x + FilletR + leftmid + Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, Fillet45Dy, DetailUnit, Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - FilletR - leftmid - Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit,
+                        -Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - FilletR - leftmid, TopSlabRebarDrop, DetailUnit),
+                    // 端部 R350 圆角
+                    RebarDetail.V(x - FilletR, TopSlabRebarDrop, DetailUnit, -Bulge90Degrees),
+                    // 立腿直线段
+                    RebarDetail.V(x, y + TopSlabRebarLegTotal, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    // 端部水平段
+                    RebarDetail.V(x - EndHorizontalRun, y),
                 ],
             };
+            n1.SubstituteLength = $"{n1.Length * DetailUnit:0.0}";
             n1.PlaceDetail(doc, new XYZ(0, 42000, 0), new XYZ(0, 41900, 0), scale: 10, options);
         }
 
-        // N2：下折筋，每侧净长 7643
+        // N2：下折筋，形状与 N1 相同（顶板外层下折至内层，两端下弯），
+        // 只是顶部平段 7643、中部下平段 FrameWidth/FrameAngleSin/sinα-2c-2(FrameTopSlabThickness-2p)-16666。
+        // 图中每段文本 = 该段 1:1 实际线长，顶点坐标同样按尺寸链直接内联。
         {
-            double half = 7643 + m / 2 + 2 * ts + diag1;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            // 小弧线
+            var leftmid = 764.3;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = TopSlabRebarDrop - TopSlabRebarLegTotal - FilletR;
+            var x1 =
+                x
+                - FilletR
+                - leftmid
+                - Fillet45Dx
+                - (TopSlabRebarDrop - 2 * Fillet45Dy)
+                - Fillet45Dx;
+
             n2 = new Rebar
             {
                 Number = "2N2",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2d+2(H1-2d)sin45° +19134",
                 Vertices =
                 [
-                    RebarDetail.V(-1214.15, -70),
-                    RebarDetail.V(-1242.25, -70),
-                    RebarDetail.V(-1242.25, 55, "", -Bulge90Degrees),
-                    RebarDetail.V(-1207.25, 90),
-                    RebarDetail.V(-442.920324, 90, "", -0.174651),
-                    RebarDetail.V(-415.183773, 79.236551),
-                    RebarDetail.V(-347.223611, 11.276389, "", 0.198912),
-                    RebarDetail.V(-320, 0),
-                    RebarDetail.V(320, 0, "", 0.198912),
-                    RebarDetail.V(347.223611, 11.276389),
-                    RebarDetail.V(415.183773, 79.236551, "", -0.174651),
-                    RebarDetail.V(442.920324, 90),
-                    RebarDetail.V(1207.25, 90, "", -Bulge90Degrees),
-                    RebarDetail.V(1242.25, 55),
-                    RebarDetail.V(1242.25, -70),
-                    RebarDetail.V(1214.15, -70),
+                    RebarDetail.V(-x + EndHorizontalRun, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit),
+                    RebarDetail.V(-x, y + TopSlabRebarLegTotal, DetailUnit, -Bulge90Degrees), // 立腿直线段
+                    RebarDetail.V(-x + FilletR, TopSlabRebarDrop, DetailUnit), // 端部 R350 圆角
+                    RebarDetail.V(
+                        -x + FilletR + leftmid,
+                        TopSlabRebarDrop,
+                        DetailUnit,
+                        -Bulge45Degrees
+                    ), // 顶部平段
+                    RebarDetail.V(
+                        -x + FilletR + leftmid + Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, Fillet45Dy, DetailUnit, Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - FilletR - leftmid - Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit,
+                        -Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - FilletR - leftmid, TopSlabRebarDrop, DetailUnit),
+                    // 端部 R350 圆角
+                    RebarDetail.V(x - FilletR, TopSlabRebarDrop, DetailUnit, -Bulge90Degrees),
+                    // 立腿直线段
+                    RebarDetail.V(x, y + TopSlabRebarLegTotal, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    // 端部水平段
+                    RebarDetail.V(x - EndHorizontalRun, y),
                 ],
             };
+            n2.SubstituteLength = $"{n2.Length * DetailUnit:0.0}";
             n2.PlaceDetail(doc, new XYZ(0, 41000, 0), new XYZ(0, 40900, 0), scale: 10, options);
         }
 
-        // N3：下折筋，每侧净长 6243
+        // N3：下折筋。各段长度和坐标由 FrameTopSlabThickness、TopBottomCoverThickness、SideCoverThickness、FrameWidth / FrameAngleSin、α 及图示构造尺寸计算。
         {
-            double half = 6243 + m / 2 + 2 * ts + diag1;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            // 小弧线
+            var leftmid = 624.3;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = TopSlabRebarDrop - TopSlabRebarLegTotal - FilletR;
+            var x1 =
+                x
+                - FilletR
+                - leftmid
+                - Fillet45Dx
+                - (TopSlabRebarDrop - 2 * Fillet45Dy)
+                - Fillet45Dx;
+
             n3 = new Rebar
             {
                 Number = "2N3",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2d+2(H1-2d)sin45° +19134",
                 Vertices =
                 [
-                    RebarDetail.V(-1214.15, -70),
-                    RebarDetail.V(-1242.25, -70),
-                    RebarDetail.V(-1242.25, 55, "", -Bulge90Degrees),
-                    RebarDetail.V(-1207.25, 90),
-                    RebarDetail.V(-582.920324, 90, "", -0.174651),
-                    RebarDetail.V(-555.183773, 79.236551),
-                    RebarDetail.V(-487.223611, 11.276389, "", 0.198912),
-                    RebarDetail.V(-460, 0),
-                    RebarDetail.V(460, 0, "", 0.198912),
-                    RebarDetail.V(487.223611, 11.276389),
-                    RebarDetail.V(555.183773, 79.236551, "", -0.174651),
-                    RebarDetail.V(582.920324, 90),
-                    RebarDetail.V(1207.25, 90, "", -Bulge90Degrees),
-                    RebarDetail.V(1242.25, 55),
-                    RebarDetail.V(1242.25, -70),
-                    RebarDetail.V(1214.15, -70),
+                    RebarDetail.V(-x + EndHorizontalRun, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit),
+                    RebarDetail.V(-x, y + TopSlabRebarLegTotal, DetailUnit, -Bulge90Degrees), // 立腿直线段
+                    RebarDetail.V(-x + FilletR, TopSlabRebarDrop, DetailUnit), // 端部 R350 圆角
+                    RebarDetail.V(
+                        -x + FilletR + leftmid,
+                        TopSlabRebarDrop,
+                        DetailUnit,
+                        -Bulge45Degrees
+                    ), // 顶部平段
+                    RebarDetail.V(
+                        -x + FilletR + leftmid + Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, Fillet45Dy, DetailUnit, Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - FilletR - leftmid - Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit,
+                        -Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - FilletR - leftmid, TopSlabRebarDrop, DetailUnit),
+                    // 端部 R350 圆角
+                    RebarDetail.V(x - FilletR, TopSlabRebarDrop, DetailUnit, -Bulge90Degrees),
+                    // 立腿直线段
+                    RebarDetail.V(x, y + TopSlabRebarLegTotal, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    // 端部水平段
+                    RebarDetail.V(x - EndHorizontalRun, y),
                 ],
             };
+            n3.SubstituteLength = $"{n3.Length * DetailUnit:0.0}";
             n3.PlaceDetail(doc, new XYZ(0, 40000, 0), new XYZ(0, 39900, 0), scale: 10, options);
         }
 
-        // N4：下折筋，每侧净长 5443
+        // N4：下折筋。各段长度和坐标由 FrameTopSlabThickness、TopBottomCoverThickness、SideCoverThickness、FrameWidth / FrameAngleSin、α 及图示构造尺寸计算。
         {
-            double half = 5443 + m / 2 + 2 * ts + diag1;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            // 小弧线
+            var leftmid = 544.3;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = TopSlabRebarDrop - TopSlabRebarLegTotal - FilletR;
+            var x1 =
+                x
+                - FilletR
+                - leftmid
+                - Fillet45Dx
+                - (TopSlabRebarDrop - 2 * Fillet45Dy)
+                - Fillet45Dx;
+
             n4 = new Rebar
             {
                 Number = "2N4",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2d+2(H1-2d)sin45° +19134",
                 Vertices =
                 [
-                    RebarDetail.V(-1214.15, -70),
-                    RebarDetail.V(-1242.25, -70),
-                    RebarDetail.V(-1242.25, 55, "", -Bulge90Degrees),
-                    RebarDetail.V(-1207.25, 90),
-                    RebarDetail.V(-662.920324, 90, "", -0.174651),
-                    RebarDetail.V(-635.183773, 79.236551),
-                    RebarDetail.V(-567.223611, 11.276389, "", 0.198912),
-                    RebarDetail.V(-540, 0),
-                    RebarDetail.V(540, 0, "", 0.198912),
-                    RebarDetail.V(567.223611, 11.276389),
-                    RebarDetail.V(635.183773, 79.236551, "", -0.174651),
-                    RebarDetail.V(662.920324, 90),
-                    RebarDetail.V(1207.25, 90, "", -Bulge90Degrees),
-                    RebarDetail.V(1242.25, 55),
-                    RebarDetail.V(1242.25, -70),
-                    RebarDetail.V(1214.15, -70),
+                    RebarDetail.V(-x + EndHorizontalRun, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit),
+                    RebarDetail.V(-x, y + TopSlabRebarLegTotal, DetailUnit, -Bulge90Degrees), // 立腿直线段
+                    RebarDetail.V(-x + FilletR, TopSlabRebarDrop, DetailUnit), // 端部 R350 圆角
+                    RebarDetail.V(
+                        -x + FilletR + leftmid,
+                        TopSlabRebarDrop,
+                        DetailUnit,
+                        -Bulge45Degrees
+                    ), // 顶部平段
+                    RebarDetail.V(
+                        -x + FilletR + leftmid + Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, Fillet45Dy, DetailUnit, Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - FilletR - leftmid - Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit,
+                        -Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - FilletR - leftmid, TopSlabRebarDrop, DetailUnit),
+                    // 端部 R350 圆角
+                    RebarDetail.V(x - FilletR, TopSlabRebarDrop, DetailUnit, -Bulge90Degrees),
+                    // 立腿直线段
+                    RebarDetail.V(x, y + TopSlabRebarLegTotal, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    // 端部水平段
+                    RebarDetail.V(x - EndHorizontalRun, y),
                 ],
             };
+            n4.SubstituteLength = $"{n4.Length * DetailUnit:0.0}";
             n4.PlaceDetail(doc, new XYZ(0, 39000, 0), new XYZ(0, 38900, 0), scale: 10, options);
         }
 
-        // N5：下折筋，每侧净长 4843
+        // N5：下折筋。各段长度和坐标由 FrameTopSlabThickness、TopBottomCoverThickness、SideCoverThickness、FrameWidth / FrameAngleSin、α 及图示构造尺寸计算。
         {
-            double half = 4843 + m / 2 + 2 * ts + diag1;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            // 小弧线
+            var leftmid = 484.3;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = TopSlabRebarDrop - TopSlabRebarLegTotal - FilletR;
+            var x1 =
+                x
+                - FilletR
+                - leftmid
+                - Fillet45Dx
+                - (TopSlabRebarDrop - 2 * Fillet45Dy)
+                - Fillet45Dx;
+
             n5 = new Rebar
             {
                 Number = "2N5",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2d+2(H1-2d)sin45° +19134",
                 Vertices =
                 [
-                    RebarDetail.V(-1214.15, -70),
-                    RebarDetail.V(-1242.25, -70),
-                    RebarDetail.V(-1242.25, 55, "", -Bulge90Degrees),
-                    RebarDetail.V(-1207.25, 90),
-                    RebarDetail.V(-722.920324, 90, "", -0.174651),
-                    RebarDetail.V(-695.183773, 79.236551),
-                    RebarDetail.V(-627.223611, 11.276389, "", 0.198912),
-                    RebarDetail.V(-600, 0),
-                    RebarDetail.V(600, 0, "", 0.198912),
-                    RebarDetail.V(627.223611, 11.276389),
-                    RebarDetail.V(695.183773, 79.236551, "", -0.174651),
-                    RebarDetail.V(722.920324, 90),
-                    RebarDetail.V(1207.25, 90, "", -Bulge90Degrees),
-                    RebarDetail.V(1242.25, 55),
-                    RebarDetail.V(1242.25, -70),
-                    RebarDetail.V(1214.15, -70),
+                    RebarDetail.V(-x + EndHorizontalRun, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit),
+                    RebarDetail.V(-x, y + TopSlabRebarLegTotal, DetailUnit, -Bulge90Degrees), // 立腿直线段
+                    RebarDetail.V(-x + FilletR, TopSlabRebarDrop, DetailUnit), // 端部 R350 圆角
+                    RebarDetail.V(
+                        -x + FilletR + leftmid,
+                        TopSlabRebarDrop,
+                        DetailUnit,
+                        -Bulge45Degrees
+                    ), // 顶部平段
+                    RebarDetail.V(
+                        -x + FilletR + leftmid + Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, Fillet45Dy, DetailUnit, Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - FilletR - leftmid - Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit,
+                        -Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - FilletR - leftmid, TopSlabRebarDrop, DetailUnit),
+                    // 端部 R350 圆角
+                    RebarDetail.V(x - FilletR, TopSlabRebarDrop, DetailUnit, -Bulge90Degrees),
+                    // 立腿直线段
+                    RebarDetail.V(x, y + TopSlabRebarLegTotal, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    // 端部水平段
+                    RebarDetail.V(x - EndHorizontalRun, y),
                 ],
             };
+            n5.SubstituteLength = $"{n5.Length * DetailUnit:0.0}";
             n5.PlaceDetail(doc, new XYZ(0, 38000, 0), new XYZ(0, 37900, 0), scale: 10, options);
         }
 
-        // N6：下折筋，每侧净长 4693
+        // N6：下折筋。两端竖段为 328，顶部平段为 4693；其余长度和坐标由
+        // FrameTopSlabThickness、TopBottomCoverThickness、SideCoverThickness、FrameWidth / FrameAngleSin、α 及图示构造尺寸计算。
         {
-            double half = 4693 + m / 2 + 2 * ts + diag1;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            // 小弧线
+            var leftmid = 814.3;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = TopSlabRebarDrop;
+            var x1 = x - leftmid - Fillet45Dx - (TopSlabRebarDrop - 2 * Fillet45Dy) - Fillet45Dx;
+
             n6 = new Rebar
             {
                 Number = "2N6",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2(H1-2d)/sin45° -2(H1-2d)+468",
                 Vertices =
                 [
-                    RebarDetail.V(1242.25, 61.9),
-                    RebarDetail.V(1242.25, 90),
-                    RebarDetail.V(772.920324, 90, "", 0.174651),
-                    RebarDetail.V(745.183773, 79.236551),
-                    RebarDetail.V(677.223611, 11.276389, "", -0.198912),
-                    RebarDetail.V(650, 0),
-                    RebarDetail.V(-650, 0, "", -0.198912),
-                    RebarDetail.V(-677.223611, 11.276389),
-                    RebarDetail.V(-745.183773, 79.236551, "", 0.174651),
-                    RebarDetail.V(-772.920324, 90),
-                    RebarDetail.V(-1242.25, 90),
-                    RebarDetail.V(-1242.25, 61.9),
+                    RebarDetail.V(-x, y - EndStraightLeg, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x + leftmid, TopSlabRebarDrop, DetailUnit, -Bulge45Degrees), // 顶部平段
+                    RebarDetail.V(
+                        -x + leftmid + Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, Fillet45Dy, DetailUnit, Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - leftmid - Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit,
+                        -Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - leftmid, TopSlabRebarDrop, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(x, y - EndStraightLeg, DetailUnit), // 端部水平段
                 ],
             };
+            n6.SubstituteLength = $"{n6.Length * DetailUnit:0.0}";
             n6.PlaceDetail(doc, new XYZ(0, 37000, 0), new XYZ(0, 36900, 0), scale: 10, options);
         }
 
-        // N7：下折筋，每侧净长 4193
+        // N7：下折筋。两端竖段为 328，顶部平段为 4193；其余长度和坐标参数化计算。
         {
-            double half = 4193 + m / 2 + 2 * ts + diag1;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            // 小弧线
+            var leftmid = 814.3;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = TopSlabRebarDrop;
+            var x1 = x - leftmid - Fillet45Dx - (TopSlabRebarDrop - 2 * Fillet45Dy) - Fillet45Dx;
             n7 = new Rebar
             {
                 Number = "2N7",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2(H1-2d)/sin45° -2(H1-2d)+1468",
                 Vertices =
                 [
-                    RebarDetail.V(1242.25, 61.9),
-                    RebarDetail.V(1242.25, 90),
-                    RebarDetail.V(822.920324, 90, "", 0.174651),
-                    RebarDetail.V(795.183773, 79.236551),
-                    RebarDetail.V(727.223611, 11.276389, "", -0.198912),
-                    RebarDetail.V(700, 0),
-                    RebarDetail.V(-700, 0, "", -0.198912),
-                    RebarDetail.V(-727.223611, 11.276389),
-                    RebarDetail.V(-795.183773, 79.236551, "", 0.174651),
-                    RebarDetail.V(-822.920324, 90),
-                    RebarDetail.V(-1242.25, 90),
-                    RebarDetail.V(-1242.25, 61.9),
+                    RebarDetail.V(-x, y - EndStraightLeg, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x + leftmid, TopSlabRebarDrop, DetailUnit, -Bulge45Degrees), // 顶部平段
+                    RebarDetail.V(
+                        -x + leftmid + Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, Fillet45Dy, DetailUnit, Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - leftmid - Fillet45Dx,
+                        TopSlabRebarDrop - Fillet45Dy,
+                        DetailUnit,
+                        -Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - leftmid, TopSlabRebarDrop, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(x, y - EndStraightLeg, DetailUnit), // 端部水平段
                 ],
             };
+            n7.SubstituteLength = $"{n7.Length * DetailUnit:0.0}";
             n7.PlaceDetail(doc, new XYZ(0, 36000, 0), new XYZ(0, 35900, 0), scale: 10, options);
         }
 
-        // N8：直线筋（2N8）
+        // N8：直线筋（2N8），水平净跨 = FrameWidth/FrameAngleSin/sinα-2c，两端竖段各 328。
         {
-            double half = halfStraight;
-            double lx = -half,
-                rx = half;
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+
             n8 = new Rebar
             {
                 Number = "2N8",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+656",
                 Vertices =
                 [
-                    RebarDetail.V(-1242.25, -28.1),
-                    RebarDetail.V(-1242.25, 0),
-                    RebarDetail.V(1242.25, 0),
-                    RebarDetail.V(1242.25, -28.1),
+                    RebarDetail.V(-x, -EndStraightLeg, DetailUnit),
+                    RebarDetail.V(-x, 0, DetailUnit),
+                    RebarDetail.V(x, 0, DetailUnit),
+                    RebarDetail.V(x, -EndStraightLeg, DetailUnit),
                 ],
             };
+            n8.SubstituteLength = $"{n8.Length * DetailUnit:0.0}";
             n8.PlaceDetail(doc, new XYZ(0, 35000, 0), new XYZ(0, 34900, 0), scale: 10, options);
         }
 
-        // N9：直线筋（2N9）
+        // N9：直线筋（2N9），水平净跨 = FrameWidth/FrameAngleSin/sinα-2c，两端竖段各 328。
         {
-            double half = halfStraight;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
             n9 = new Rebar
             {
                 Number = "2N9",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+656",
                 Vertices =
                 [
-                    RebarDetail.V(-1242.25, -28.1),
-                    RebarDetail.V(-1242.25, 0),
-                    RebarDetail.V(1242.25, 0),
-                    RebarDetail.V(1242.25, -28.1),
+                    RebarDetail.V(-x, -EndStraightLeg, DetailUnit),
+                    RebarDetail.V(-x, 0, DetailUnit),
+                    RebarDetail.V(x, 0, DetailUnit),
+                    RebarDetail.V(x, -EndStraightLeg, DetailUnit),
                 ],
             };
+            n9.SubstituteLength = $"{n9.Length * DetailUnit:0.0}";
             n9.PlaceDetail(doc, new XYZ(0, 34000, 0), new XYZ(0, 33900, 0), scale: 10, options);
         }
 
-        // N10：直线筋（16N10）
+        // N10：直线筋（16N10），水平净跨 = FrameWidth/FrameAngleSin/sinα-2c，两端竖段各 328。
         {
-            double half = halfStraight;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
             n10 = new Rebar
             {
                 Number = "16N10",
                 Count = 16,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+656",
                 Vertices =
                 [
-                    RebarDetail.V(-1242.25, 28.1),
-                    RebarDetail.V(-1242.25, 0),
-                    RebarDetail.V(1242.25, 0),
-                    RebarDetail.V(1242.25, 28.1),
+                    RebarDetail.V(-x, EndStraightLeg, DetailUnit),
+                    RebarDetail.V(-x, 0, DetailUnit),
+                    RebarDetail.V(x, 0, DetailUnit),
+                    RebarDetail.V(x, EndStraightLeg, DetailUnit),
                 ],
             };
+            n10.SubstituteLength = $"{n10.Length * DetailUnit:0.0}";
             n10.PlaceDetail(doc, new XYZ(0, 33000, 0), new XYZ(0, 32900, 0), scale: 10, options);
         }
 
-        // N11：直线筋（8N11）
+        // N11：FrameBottomSlabThickness 底板族 U 形筋。长度和坐标由 FrameBottomSlabThickness、TopBottomCoverThickness、SideCoverThickness、FrameWidth / FrameAngleSin、α 及图示构造尺寸计算。
         {
-            double half = halfStraight;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = BottomSlabRebarLegTotal + FilletR;
+
             n11 = new Rebar
             {
                 Number = "8N11",
                 Count = 8,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2(H2-d)+1256",
                 Vertices =
                 [
-                    RebarDetail.V(-1214.15, 160),
-                    RebarDetail.V(-1242.25, 160),
-                    RebarDetail.V(-1242.25, 35, "", Bulge90Degrees),
-                    RebarDetail.V(-1207.25, 0),
-                    RebarDetail.V(1207.25, 0, "", Bulge90Degrees),
-                    RebarDetail.V(1242.25, 35),
-                    RebarDetail.V(1242.25, 160),
-                    RebarDetail.V(1214.15, 160),
+                    RebarDetail.V(-x + EndHorizontalRun, y, DetailUnit),
+                    RebarDetail.V(-x, y, DetailUnit),
+                    RebarDetail.V(-x, FilletR, DetailUnit, Bulge90Degrees),
+                    RebarDetail.V(-x + FilletR, 0, DetailUnit),
+                    RebarDetail.V(x - FilletR, 0, DetailUnit, Bulge90Degrees),
+                    RebarDetail.V(x, FilletR, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    RebarDetail.V(x - EndHorizontalRun, y, DetailUnit),
                 ],
             };
+            n11.SubstituteLength = $"{n11.Length * DetailUnit:0.0}";
             n11.PlaceDetail(doc, new XYZ(0, 32000, 0), new XYZ(0, 31900, 0), scale: 10, options);
         }
 
-        // N12：下折筋，每侧净长 6045
+        // N12：底板族下折筋。长度和坐标由 FrameBottomSlabThickness、TopBottomCoverThickness、SideCoverThickness、FrameWidth / FrameAngleSin、α 及图示构造尺寸计算。
         {
-            double half = 6045 + m / 2 + 2 * ts + diag2;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            var leftmid = 604.5;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = -BottomSlabRebarDrop + BottomSlabRebarLegTotal + FilletR;
+            var x1 =
+                x
+                - FilletR
+                - leftmid
+                - Fillet45Dx
+                - (BottomSlabRebarDrop - 2 * Fillet45Dy)
+                - Fillet45Dx;
             n12 = new Rebar
             {
                 Number = "2N12",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2d+2(H2-2d)/sin45° +1076",
                 Vertices =
                 [
-                    RebarDetail.V(-1214.15, 50),
-                    RebarDetail.V(-1242.25, 50),
-                    RebarDetail.V(-1242.25, -75, "", Bulge90Degrees),
-                    RebarDetail.V(-1207.25, -110),
-                    RebarDetail.V(-602.777045, -110, "", 0.177199),
-                    RebarDetail.V(-575.183773, -99.236551),
-                    RebarDetail.V(-487.223611, -11.276389, "", -0.198912),
-                    RebarDetail.V(-460, 0),
-                    RebarDetail.V(460, 0, "", -0.198912),
-                    RebarDetail.V(487.223611, -11.276389),
-                    RebarDetail.V(575.183773, -99.236551, "", 0.177199),
-                    RebarDetail.V(602.777045, -110),
-                    RebarDetail.V(1207.25, -110, "", Bulge90Degrees),
-                    RebarDetail.V(1242.25, -75),
-                    RebarDetail.V(1242.25, 50),
-                    RebarDetail.V(1214.15, 50),
+                    RebarDetail.V(-x + EndHorizontalRun, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit),
+                    RebarDetail.V(-x, y - BottomSlabRebarLegTotal, DetailUnit, Bulge90Degrees), // 立腿直线段
+                    RebarDetail.V(-x + FilletR, -BottomSlabRebarDrop, DetailUnit), // 端部 R350 圆角
+                    RebarDetail.V(
+                        -x + FilletR + leftmid,
+                        -BottomSlabRebarDrop,
+                        DetailUnit,
+                        Bulge45Degrees
+                    ), // 顶部平段
+                    RebarDetail.V(
+                        -x + FilletR + leftmid + Fillet45Dx,
+                        -BottomSlabRebarDrop + Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, -Fillet45Dy, DetailUnit, -Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, -Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, -Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - FilletR - leftmid - Fillet45Dx,
+                        -BottomSlabRebarDrop + Fillet45Dy,
+                        DetailUnit,
+                        Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - FilletR - leftmid, -BottomSlabRebarDrop, DetailUnit),
+                    // 端部 R350 圆角
+                    RebarDetail.V(x - FilletR, -BottomSlabRebarDrop, DetailUnit, Bulge90Degrees),
+                    // 立腿直线段
+                    RebarDetail.V(x, y - BottomSlabRebarLegTotal, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    // 端部水平段
+                    RebarDetail.V(x - EndHorizontalRun, y),
                 ],
             };
+            n12.SubstituteLength = $"{n12.Length * DetailUnit:0.0}";
             n12.PlaceDetail(doc, new XYZ(0, 31000, 0), new XYZ(0, 30900, 0), scale: 10, options);
         }
 
-        // N13：下折筋，每侧净长 5245
+        // N13：底板族下折筋。长度和坐标由 FrameBottomSlabThickness、TopBottomCoverThickness、SideCoverThickness、FrameWidth / FrameAngleSin、α 及图示构造尺寸计算。
         {
-            double half = 5245 + m / 2 + 2 * ts + diag2;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            var leftmid = 524.5;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = -BottomSlabRebarDrop + BottomSlabRebarLegTotal + FilletR;
+            var x1 =
+                x
+                - FilletR
+                - leftmid
+                - Fillet45Dx
+                - (BottomSlabRebarDrop - 2 * Fillet45Dy)
+                - Fillet45Dx;
+
             n13 = new Rebar
             {
                 Number = "2N13",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2d+2(H2-2d)/sin45° +1076",
                 Vertices =
                 [
-                    RebarDetail.V(-1214.15, 50),
-                    RebarDetail.V(-1242.25, 50),
-                    RebarDetail.V(-1242.25, -75, "", Bulge90Degrees),
-                    RebarDetail.V(-1207.25, -110),
-                    RebarDetail.V(-682.777045, -110, "", 0.177199),
-                    RebarDetail.V(-655.183773, -99.236551),
-                    RebarDetail.V(-567.223611, -11.276389, "", -0.198912),
-                    RebarDetail.V(-540, 0),
-                    RebarDetail.V(540, 0, "", -0.198912),
-                    RebarDetail.V(567.223611, -11.276389),
-                    RebarDetail.V(655.183773, -99.236551, "", 0.177199),
-                    RebarDetail.V(682.777045, -110),
-                    RebarDetail.V(1207.25, -110.000017, "", Bulge90Degrees),
-                    RebarDetail.V(1242.25, -75.000017),
-                    RebarDetail.V(1242.25, 49.999983),
-                    RebarDetail.V(1214.15, 49.999983),
+                    RebarDetail.V(-x + EndHorizontalRun, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit),
+                    RebarDetail.V(-x, y - BottomSlabRebarLegTotal, DetailUnit, Bulge90Degrees), // 立腿直线段
+                    RebarDetail.V(-x + FilletR, -BottomSlabRebarDrop, DetailUnit), // 端部 R350 圆角
+                    RebarDetail.V(
+                        -x + FilletR + leftmid,
+                        -BottomSlabRebarDrop,
+                        DetailUnit,
+                        Bulge45Degrees
+                    ), // 顶部平段
+                    RebarDetail.V(
+                        -x + FilletR + leftmid + Fillet45Dx,
+                        -BottomSlabRebarDrop + Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, -Fillet45Dy, DetailUnit, -Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, -Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, -Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - FilletR - leftmid - Fillet45Dx,
+                        -BottomSlabRebarDrop + Fillet45Dy,
+                        DetailUnit,
+                        Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - FilletR - leftmid, -BottomSlabRebarDrop, DetailUnit),
+                    // 端部 R350 圆角
+                    RebarDetail.V(x - FilletR, -BottomSlabRebarDrop, DetailUnit, Bulge90Degrees),
+                    // 立腿直线段
+                    RebarDetail.V(x, y - BottomSlabRebarLegTotal, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    // 端部水平段
+                    RebarDetail.V(x - EndHorizontalRun, y),
                 ],
             };
+            n13.SubstituteLength = $"{n13.Length * DetailUnit:0.0}";
             n13.PlaceDetail(doc, new XYZ(0, 30000, 0), new XYZ(0, 29900, 0), scale: 10, options);
         }
 
-        // N14：下折筋，每侧净长 4545
+        // N14：底板族下折筋。长度和坐标由 FrameBottomSlabThickness、TopBottomCoverThickness、SideCoverThickness、FrameWidth / FrameAngleSin、α 及图示构造尺寸计算。
         {
-            double half = 4545 + m / 2 + 2 * ts + diag2;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            var leftmid = 454.5;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = -BottomSlabRebarDrop + BottomSlabRebarLegTotal + FilletR;
+            var x1 =
+                x
+                - FilletR
+                - leftmid
+                - Fillet45Dx
+                - (BottomSlabRebarDrop - 2 * Fillet45Dy)
+                - Fillet45Dx;
+
             n14 = new Rebar
             {
                 Number = "2N14",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2d+2(H2-2d)/sin45° +1076",
                 Vertices =
                 [
-                    RebarDetail.V(-1214.15, 50),
-                    RebarDetail.V(-1242.25, 50),
-                    RebarDetail.V(-1242.25, -75, "", Bulge90Degrees),
-                    RebarDetail.V(-1207.25, -110),
-                    RebarDetail.V(-752.777045, -110, "", 0.177199),
-                    RebarDetail.V(-725.183773, -99.236551),
-                    RebarDetail.V(-637.223611, -11.276389, "", -0.198912),
-                    RebarDetail.V(-610, 0),
-                    RebarDetail.V(610, 0, "", -0.198912),
-                    RebarDetail.V(637.223611, -11.276389),
-                    RebarDetail.V(725.183773, -99.236551, "", 0.177199),
-                    RebarDetail.V(752.777045, -110),
-                    RebarDetail.V(1207.25, -110, "", Bulge90Degrees),
-                    RebarDetail.V(1242.25, -75),
-                    RebarDetail.V(1242.25, 50),
-                    RebarDetail.V(1214.15, 50),
+                    RebarDetail.V(-x + EndHorizontalRun, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit),
+                    RebarDetail.V(-x, y - BottomSlabRebarLegTotal, DetailUnit, Bulge90Degrees), // 立腿直线段
+                    RebarDetail.V(-x + FilletR, -BottomSlabRebarDrop, DetailUnit), // 端部 R350 圆角
+                    RebarDetail.V(
+                        -x + FilletR + leftmid,
+                        -BottomSlabRebarDrop,
+                        DetailUnit,
+                        Bulge45Degrees
+                    ), // 顶部平段
+                    RebarDetail.V(
+                        -x + FilletR + leftmid + Fillet45Dx,
+                        -BottomSlabRebarDrop + Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, -Fillet45Dy, DetailUnit, -Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, -Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, -Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - FilletR - leftmid - Fillet45Dx,
+                        -BottomSlabRebarDrop + Fillet45Dy,
+                        DetailUnit,
+                        Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - FilletR - leftmid, -BottomSlabRebarDrop, DetailUnit),
+                    // 端部 R350 圆角
+                    RebarDetail.V(x - FilletR, -BottomSlabRebarDrop, DetailUnit, Bulge90Degrees),
+                    // 立腿直线段
+                    RebarDetail.V(x, y - BottomSlabRebarLegTotal, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    // 端部水平段
+                    RebarDetail.V(x - EndHorizontalRun, y),
                 ],
             };
+            n14.SubstituteLength = $"{n14.Length * DetailUnit:0.0}";
             n14.PlaceDetail(doc, new XYZ(0, 29000, 0), new XYZ(0, 28900, 0), scale: 10, options);
         }
 
-        // N15：下折筋，每侧净长 3945
+        // N15：底板族下折筋。长度和坐标由 FrameBottomSlabThickness、TopBottomCoverThickness、SideCoverThickness、FrameWidth / FrameAngleSin、α 及图示构造尺寸计算。
         {
-            double half = 3945 + m / 2 + 2 * ts + diag2;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            var leftmid = 394.5;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = -BottomSlabRebarDrop + BottomSlabRebarLegTotal + FilletR;
+            var x1 =
+                x
+                - FilletR
+                - leftmid
+                - Fillet45Dx
+                - (BottomSlabRebarDrop - 2 * Fillet45Dy)
+                - Fillet45Dx;
+
             n15 = new Rebar
             {
                 Number = "2N15",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2d+2(H2-2d)/sin45° +1076",
                 Vertices =
                 [
-                    RebarDetail.V(-1214.15, 50),
-                    RebarDetail.V(-1242.25, 50),
-                    RebarDetail.V(-1242.25, -75, "", Bulge90Degrees),
-                    RebarDetail.V(-1207.25, -110),
-                    RebarDetail.V(-812.777045, -110, "", 0.177199),
-                    RebarDetail.V(-785.183773, -99.236551),
-                    RebarDetail.V(-697.223611, -11.276389, "", -0.198912),
-                    RebarDetail.V(-670, 0),
-                    RebarDetail.V(670, 0, "", -0.198912),
-                    RebarDetail.V(697.223611, -11.276389),
-                    RebarDetail.V(785.183773, -99.236551, "", 0.177199),
-                    RebarDetail.V(812.777045, -110),
-                    RebarDetail.V(1207.25, -110, "", Bulge90Degrees),
-                    RebarDetail.V(1242.25, -75),
-                    RebarDetail.V(1242.25, 50),
-                    RebarDetail.V(1214.15, 50),
+                    RebarDetail.V(-x + EndHorizontalRun, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit),
+                    RebarDetail.V(-x, y - BottomSlabRebarLegTotal, DetailUnit, Bulge90Degrees), // 立腿直线段
+                    RebarDetail.V(-x + FilletR, -BottomSlabRebarDrop, DetailUnit), // 端部 R350 圆角
+                    RebarDetail.V(
+                        -x + FilletR + leftmid,
+                        -BottomSlabRebarDrop,
+                        DetailUnit,
+                        Bulge45Degrees
+                    ), // 顶部平段
+                    RebarDetail.V(
+                        -x + FilletR + leftmid + Fillet45Dx,
+                        -BottomSlabRebarDrop + Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, -Fillet45Dy, DetailUnit, -Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, -Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, -Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - FilletR - leftmid - Fillet45Dx,
+                        -BottomSlabRebarDrop + Fillet45Dy,
+                        DetailUnit,
+                        Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - FilletR - leftmid, -BottomSlabRebarDrop, DetailUnit),
+                    // 端部 R350 圆角
+                    RebarDetail.V(x - FilletR, -BottomSlabRebarDrop, DetailUnit, Bulge90Degrees),
+                    // 立腿直线段
+                    RebarDetail.V(x, y - BottomSlabRebarLegTotal, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    // 端部水平段
+                    RebarDetail.V(x - EndHorizontalRun, y),
                 ],
             };
+            n15.SubstituteLength = $"{n15.Length * DetailUnit:0.0}";
             n15.PlaceDetail(doc, new XYZ(0, 28000, 0), new XYZ(0, 27900, 0), scale: 10, options);
         }
 
-        // N16：下折筋，每侧净长 3445
+        // N16：底板族下折筋。长度和坐标由 FrameBottomSlabThickness、TopBottomCoverThickness、SideCoverThickness、FrameWidth / FrameAngleSin、α 及图示构造尺寸计算。
         {
-            double half = 3445 + m / 2 + 2 * ts + diag2;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            var leftmid = 344.5;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = -BottomSlabRebarDrop + BottomSlabRebarLegTotal + FilletR;
+            var x1 =
+                x
+                - FilletR
+                - leftmid
+                - Fillet45Dx
+                - (BottomSlabRebarDrop - 2 * Fillet45Dy)
+                - Fillet45Dx;
+
             n16 = new Rebar
             {
                 Number = "2N16",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2d+2(H2-2d)/sin45° +1076",
                 Vertices =
                 [
-                    RebarDetail.V(-1214.15, 50),
-                    RebarDetail.V(-1242.25, 50),
-                    RebarDetail.V(-1242.25, -75, "", Bulge90Degrees),
-                    RebarDetail.V(-1207.25, -110),
-                    RebarDetail.V(-862.777045, -110, "", 0.177199),
-                    RebarDetail.V(-835.183773, -99.236551),
-                    RebarDetail.V(-747.223611, -11.276389, "", -0.198912),
-                    RebarDetail.V(-720, 0),
-                    RebarDetail.V(720, 0, "", -0.198912),
-                    RebarDetail.V(747.223611, -11.276389),
-                    RebarDetail.V(835.183773, -99.236551, "", 0.177199),
-                    RebarDetail.V(862.777045, -110),
-                    RebarDetail.V(1207.25, -110, "", Bulge90Degrees),
-                    RebarDetail.V(1242.25, -75),
-                    RebarDetail.V(1242.25, 50),
-                    RebarDetail.V(1214.15, 50),
+                    RebarDetail.V(-x + EndHorizontalRun, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit),
+                    RebarDetail.V(-x, y - BottomSlabRebarLegTotal, DetailUnit, Bulge90Degrees), // 立腿直线段
+                    RebarDetail.V(-x + FilletR, -BottomSlabRebarDrop, DetailUnit), // 端部 R350 圆角
+                    RebarDetail.V(
+                        -x + FilletR + leftmid,
+                        -BottomSlabRebarDrop,
+                        DetailUnit,
+                        Bulge45Degrees
+                    ), // 顶部平段
+                    RebarDetail.V(
+                        -x + FilletR + leftmid + Fillet45Dx,
+                        -BottomSlabRebarDrop + Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, -Fillet45Dy, DetailUnit, -Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, -Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, -Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - FilletR - leftmid - Fillet45Dx,
+                        -BottomSlabRebarDrop + Fillet45Dy,
+                        DetailUnit,
+                        Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - FilletR - leftmid, -BottomSlabRebarDrop, DetailUnit),
+                    // 端部 R350 圆角
+                    RebarDetail.V(x - FilletR, -BottomSlabRebarDrop, DetailUnit, Bulge90Degrees),
+                    // 立腿直线段
+                    RebarDetail.V(x, y - BottomSlabRebarLegTotal, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    // 端部水平段
+                    RebarDetail.V(x - EndHorizontalRun, y),
                 ],
             };
+            n16.SubstituteLength = $"{n16.Length * DetailUnit:0.0}";
             n16.PlaceDetail(doc, new XYZ(0, 27000, 0), new XYZ(0, 26900, 0), scale: 10, options);
         }
 
-        // N17：下折筋，每侧净长 2945
+        // N17：底板族下折筋。长度和坐标由 FrameBottomSlabThickness、TopBottomCoverThickness、SideCoverThickness、FrameWidth / FrameAngleSin、α 及图示构造尺寸计算。
         {
-            double half = 2945 + m / 2 + 2 * ts + diag2;
-            double lx = -half,
-                rx = half,
-                fy = -hook;
+            var leftmid = 294.5;
+
+            var x = FrameHalfWidthOnSlope - SideCoverThickness;
+            var y = -BottomSlabRebarDrop + BottomSlabRebarLegTotal + FilletR;
+            var x1 =
+                x
+                - FilletR
+                - leftmid
+                - Fillet45Dx
+                - (BottomSlabRebarDrop - 2 * Fillet45Dy)
+                - Fillet45Dx;
+
             n17 = new Rebar
             {
                 Number = "2N17",
                 Count = 2,
                 Diameter = d,
-                SubstituteLength = "A/sin α -2c+2d+2(H2-2d)/sin45° +1076",
                 Vertices =
                 [
-                    RebarDetail.V(-1214.168155, 50),
-                    RebarDetail.V(-1242.268155, 50),
-                    RebarDetail.V(-1242.268155, -75, "", Bulge90Degrees),
-                    RebarDetail.V(-1207.268155, -110),
-                    RebarDetail.V(-912.777045, -110, "", 0.177199),
-                    RebarDetail.V(-885.183773, -99.236551),
-                    RebarDetail.V(-797.223611, -11.276389, "", -0.198912),
-                    RebarDetail.V(-770, 0),
-                    RebarDetail.V(770, 0, "", -0.198912),
-                    RebarDetail.V(797.223611, -11.276389),
-                    RebarDetail.V(885.183773, -99.236551, "", 0.177199),
-                    RebarDetail.V(912.777045, -110),
-                    RebarDetail.V(1207.268155, -110, "", Bulge90Degrees),
-                    RebarDetail.V(1242.268155, -75),
-                    RebarDetail.V(1242.268155, 50),
-                    RebarDetail.V(1214.168155, 50),
+                    RebarDetail.V(-x + EndHorizontalRun, y, DetailUnit), // 端部水平段
+                    RebarDetail.V(-x, y, DetailUnit),
+                    RebarDetail.V(-x, y - BottomSlabRebarLegTotal, DetailUnit, Bulge90Degrees), // 立腿直线段
+                    RebarDetail.V(-x + FilletR, -BottomSlabRebarDrop, DetailUnit), // 端部 R350 圆角
+                    RebarDetail.V(
+                        -x + FilletR + leftmid,
+                        -BottomSlabRebarDrop,
+                        DetailUnit,
+                        Bulge45Degrees
+                    ), // 顶部平段
+                    RebarDetail.V(
+                        -x + FilletR + leftmid + Fillet45Dx,
+                        -BottomSlabRebarDrop + Fillet45Dy,
+                        DetailUnit
+                    ), // 顶部短平段
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(-x1 - Fillet45Dx, -Fillet45Dy, DetailUnit, -Bulge45Degrees),
+                    // 中部短平段
+                    RebarDetail.V(-x1, 0, DetailUnit),
+                    // ── 以下为右半侧镜像 ──
+                    // 中部短平段
+                    RebarDetail.V(x1, 0, DetailUnit, -Bulge45Degrees),
+                    // 斜段下圆角（45°）
+                    RebarDetail.V(x1 + Fillet45Dx, -Fillet45Dy, DetailUnit),
+                    // 顶部短平段
+                    RebarDetail.V(
+                        x - FilletR - leftmid - Fillet45Dx,
+                        -BottomSlabRebarDrop + Fillet45Dy,
+                        DetailUnit,
+                        Bulge45Degrees
+                    ),
+                    // 顶部平段
+                    RebarDetail.V(x - FilletR - leftmid, -BottomSlabRebarDrop, DetailUnit),
+                    // 端部 R350 圆角
+                    RebarDetail.V(x - FilletR, -BottomSlabRebarDrop, DetailUnit, Bulge90Degrees),
+                    // 立腿直线段
+                    RebarDetail.V(x, y - BottomSlabRebarLegTotal, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    // 端部水平段
+                    RebarDetail.V(x - EndHorizontalRun, y),
                 ],
             };
+            n17.SubstituteLength = $"{n17.Length * DetailUnit:0.0}";
             n17.PlaceDetail(doc, new XYZ(0, 26000, 0), new XYZ(0, 25900, 0), scale: 10, options);
         }
 
-        // N18：竖向钢筋
-        n18 = new Rebar
+        // N18：侧墙竖向钢筋。长度和坐标由 a、H、FrameBottomSlabThickness、TopBottomCoverThickness、SideCoverThickness、α 及图示尺寸计算。
         {
-            Number = "16N18",
-            Count = 16,
-            Diameter = d,
-            Vertices =
-            [
-                RebarDetail.V(159.979871, -401.9),
-                RebarDetail.V(159.979871, -430),
-                RebarDetail.V(34.979871, -430, "", -Bulge90Degrees),
-                RebarDetail.V(-0.020129, -395),
-                RebarDetail.V(0.020129, 395, "", -Bulge90Degrees),
-                RebarDetail.V(35.020129, 430),
-                RebarDetail.V(160.020129, 430),
-                RebarDetail.V(160.020129, 401.9),
-            ],
-        };
+            double x = FrameSideWallThickness / Sin45 - SideCoverThickness - 25 + FilletR;
+            double y = FrameHeight / 2 - TopBottomCoverThickness;
 
-        // N19：竖向直筋
-        n19 = new Rebar
-        {
-            Number = "24N19",
-            Count = 24,
-            Diameter = d,
-            Vertices =
-            [
-                RebarDetail.V(28.1, 430),
-                RebarDetail.V(0, 430),
-                RebarDetail.V(0, -430),
-                RebarDetail.V(28.1, -430),
-            ],
-        };
+            n18 = new Rebar
+            {
+                Number = "16N18",
+                Count = 16,
+                Diameter = d,
+                Vertices =
+                [
+                    RebarDetail.V(x, y - EndStraightLeg, DetailUnit),
+                    RebarDetail.V(x, y, DetailUnit),
+                    RebarDetail.V(FilletR, y, DetailUnit, bulge: Bulge90Degrees),
+                    RebarDetail.V(0, y - FilletR, DetailUnit),
+                    RebarDetail.V(0, -y + FilletR, DetailUnit, bulge: Bulge90Degrees),
+                    RebarDetail.V(FilletR, -y, DetailUnit),
+                    RebarDetail.V(x, -y, DetailUnit),
+                    RebarDetail.V(x, -y + EndStraightLeg, DetailUnit),
+                ],
+            };
 
-        // N20：竖向直筋
-        n20 = new Rebar
+            n18.SubstituteLength = $"{n18.Length * DetailUnit:0.0}";
+            n18.PlaceDetail(
+                doc,
+                new XYZ(-1000, 25000, 0),
+                new XYZ(-980, 24900, 0),
+                scale: 10,
+                options
+            );
+        }
+
+        // N19：竖向直筋。图形坐标按框架主视图 1:10，长度按实际毫米计算。
         {
-            Number = "24N20",
-            Count = 24,
-            Diameter = d,
-            Vertices =
-            [
-                RebarDetail.V(28.1, 430),
-                RebarDetail.V(0, 430),
-                RebarDetail.V(0, -430),
-                RebarDetail.V(28.1, -430),
-            ],
-        };
+            double y = FrameHeight / 2 - TopBottomCoverThickness;
+
+            n19 = new Rebar
+            {
+                Number = "24N19",
+                Count = 24,
+                Diameter = d,
+                Vertices =
+                [
+                    RebarDetail.V(EndStraightLeg, y, DetailUnit),
+                    RebarDetail.V(0, y, DetailUnit),
+                    RebarDetail.V(0, -y, DetailUnit),
+                    RebarDetail.V(EndStraightLeg, -y, DetailUnit),
+                ],
+            };
+            n19.SubstituteLength = $"{n19.Length * DetailUnit:0.0}";
+            n19.PlaceDetail(doc, new XYZ(0, 25000, 0), new XYZ(20, 24900, 0), scale: 10, options);
+        }
+
+        // N20：竖向直筋。图形坐标按框架主视图 1:10，长度按实际毫米计算。
+        {
+            double y = FrameHeight / 2 - TopBottomCoverThickness;
+
+            n20 = new Rebar
+            {
+                Number = "16N20",
+                Count = 16,
+                Diameter = 16,
+                Vertices =
+                [
+                    RebarDetail.V(EndStraightLeg, y, DetailUnit),
+                    RebarDetail.V(0, y, DetailUnit),
+                    RebarDetail.V(0, -y, DetailUnit),
+                    RebarDetail.V(EndStraightLeg, -y, DetailUnit),
+                ],
+            };
+            n20.SubstituteLength = $"{n20.Length * DetailUnit:0.0}";
+            n20.PlaceDetail(
+                doc,
+                new XYZ(1000, 25000, 0),
+                new XYZ(1020, 24900, 0),
+                scale: 10,
+                options
+            );
+        }
 
         #region  框架桥结构
         CreatFrame(doc);
 
         // 将 N1~N10 无标注钢筋统一插入框架桥结构图指定位置。
-        n0.Place(doc, new XYZ(0, -FrameCover, 0));
-        n1.Place(doc, new XYZ(0, -(FrameTopSlabThickness - FrameCover), 0));
-        n2.Place(doc, new XYZ(0, -(FrameTopSlabThickness - FrameCover), 0));
-        n3.Place(doc, new XYZ(0, -(FrameTopSlabThickness - FrameCover), 0));
-        n4.Place(doc, new XYZ(0, -(FrameTopSlabThickness - FrameCover), 0));
-        n5.Place(doc, new XYZ(0, -(FrameTopSlabThickness - FrameCover), 0));
-        n6.Place(doc, new XYZ(0, -(FrameTopSlabThickness - FrameCover), 0));
-        n7.Place(doc, new XYZ(0, -(FrameTopSlabThickness - FrameCover), 0));
-        n8.Place(doc, new XYZ(0, -(FrameTopSlabThickness - FrameCover), 0));
-        n9.Place(doc, new XYZ(0, -(FrameTopSlabThickness - FrameCover), 0));
+        n0.Place(doc, new XYZ(0, -SideCoverThickness, 0));
+        n1.Place(doc, new XYZ(0, -(FrameTopSlabThickness - SideCoverThickness), 0));
+        n2.Place(doc, new XYZ(0, -(FrameTopSlabThickness - SideCoverThickness), 0));
+        n3.Place(doc, new XYZ(0, -(FrameTopSlabThickness - SideCoverThickness), 0));
+        n4.Place(doc, new XYZ(0, -(FrameTopSlabThickness - SideCoverThickness), 0));
+        n5.Place(doc, new XYZ(0, -(FrameTopSlabThickness - SideCoverThickness), 0));
+        n6.Place(doc, new XYZ(0, -(FrameTopSlabThickness - SideCoverThickness), 0));
+        n7.Place(doc, new XYZ(0, -(FrameTopSlabThickness - SideCoverThickness), 0));
+        n8.Place(doc, new XYZ(0, -(FrameTopSlabThickness - SideCoverThickness), 0));
+        n9.Place(doc, new XYZ(0, -(FrameTopSlabThickness - SideCoverThickness), 0));
         n10.Place(doc, new XYZ(0, FrameBottomRebarPlacementY, 0));
-        n11.Place(doc, new XYZ(0, -FrameHeight + FrameCover, 0));
+        n11.Place(doc, new XYZ(0, -FrameHeight + SideCoverThickness, 0));
         n12.Place(doc, new XYZ(0, FrameBottomRebarPlacementY, 0));
         n13.Place(doc, new XYZ(0, FrameBottomRebarPlacementY, 0));
         n14.Place(doc, new XYZ(0, FrameBottomRebarPlacementY, 0));
@@ -881,17 +1299,23 @@ public static partial class GeneratedDraw
         n16.Place(doc, new XYZ(0, FrameBottomRebarPlacementY, 0));
         n17.Place(doc, new XYZ(0, FrameBottomRebarPlacementY, 0));
 
-        n18.Place(doc, new XYZ(-FrameOuterRebarPlacementX, -FrameHeight / 2, 0));
-        n19.Place(doc, new XYZ(-FrameOuterRebarPlacementX, -FrameHeight / 2, 0));
+        n18.Place(
+            doc,
+            new XYZ(-(double)(FrameHalfWidthOnSlope - SideCoverThickness), -FrameHeight / 2, 0)
+        );
+        n19.Place(
+            doc,
+            new XYZ(-(double)(FrameHalfWidthOnSlope - SideCoverThickness), -FrameHeight / 2, 0)
+        );
         n20.Place(doc, new XYZ(-FrameInnerRebarPlacementX, -FrameHeight / 2, 0));
         n18.Place(
             doc,
-            new XYZ(FrameOuterRebarPlacementX, -FrameHeight / 2, 0),
+            new XYZ((double)(FrameHalfWidthOnSlope - SideCoverThickness), -FrameHeight / 2, 0),
             transform: new PlaceTransform() { Rotation = Math.PI }
         );
         n19.Place(
             doc,
-            new XYZ(FrameOuterRebarPlacementX, -FrameHeight / 2, 0),
+            new XYZ((double)(FrameHalfWidthOnSlope - SideCoverThickness), -FrameHeight / 2, 0),
             transform: new PlaceTransform() { Rotation = Math.PI }
         );
         n20.Place(
@@ -905,25 +1329,41 @@ public static partial class GeneratedDraw
         var tieData = new List<string[]>
         {
             new[] { "位置", "编号", "D", "L1", "H", "L" },
-            new[] { "顶板", "N23", "28", "102", "H1-2d", "H1-2d+160" },
+            new[]
+            {
+                "顶板",
+                "N23",
+                "28",
+                "102",
+                "FrameTopSlabThickness-2d",
+                "FrameTopSlabThickness-2d+160",
+            },
             new[]
             {
                 "顶板",
                 "N23-1~18",
                 "28",
                 "102",
-                "(H1-2d)~(H1+y1-2d)",
-                "(H1-2d+160)~(H1+y1-2d+160)",
+                "(FrameTopSlabThickness-2d)~(FrameTopSlabThickness+y1-2d)",
+                "(FrameTopSlabThickness-2d+160)~(FrameTopSlabThickness+y1-2d+160)",
             },
-            new[] { "底板", "N24", "28", "102", "H2-2d", "H2-2d+160" },
+            new[]
+            {
+                "底板",
+                "N24",
+                "28",
+                "102",
+                "FrameBottomSlabThickness-2d",
+                "FrameBottomSlabThickness-2d+160",
+            },
             new[]
             {
                 "底板",
                 "N24-1~3",
                 "28",
                 "102",
-                "(H2-2d)~(H2+y2-2d)",
-                "(H2-2d+160)~(H2+y2-2d+160)",
+                "(FrameBottomSlabThickness-2d)~(FrameBottomSlabThickness+y2-2d)",
+                "(FrameBottomSlabThickness-2d+160)~(FrameBottomSlabThickness+y2-2d+160)",
             },
             new[] { "侧墙", "N25", "28", "102", "a/sinα-2c", "a/sinα-2c+160" },
         };
@@ -972,26 +1412,206 @@ public static partial class GeneratedDraw
         {
             new[] { "编号", "直径", "根数", "每根长", "总长", "单位重量", "总重量" },
             new[] { "N0", "28", "8", "28371", "226.968", "4.83", "1096.26" },
-            new[] { "N1", "28", "2", "28934", "57.868", "4.83", "279.50" },
-            new[] { "N2", "28", "2", "28934", "57.868", "4.83", "279.50" },
-            new[] { "N3", "28", "2", "28934", "57.868", "4.83", "279.50" },
-            new[] { "N4", "28", "2", "28934", "57.868", "4.83", "279.50" },
-            new[] { "N5", "28", "2", "28934", "57.868", "4.83", "279.50" },
-            new[] { "N6", "28", "2", "26034", "52.068", "4.83", "251.49" },
-            new[] { "N7", "28", "2", "26034", "52.068", "4.83", "251.49" },
-            new[] { "N8", "28", "2", "25471", "50.942", "4.83", "246.05" },
-            new[] { "N9", "28", "2", "25471", "50.942", "4.83", "246.05" },
-            new[] { "N10", "28", "16", "25471", "407.536", "4.83", "1968.40" },
-            new[] { "N11", "28", "8", "28371", "226.968", "4.83", "1096.26" },
-            new[] { "N12", "28", "2", "29104", "58.208", "4.83", "281.14" },
-            new[] { "N13", "28", "2", "29104", "58.208", "4.83", "281.14" },
-            new[] { "N14", "28", "2", "29104", "58.208", "4.83", "281.14" },
-            new[] { "N15", "28", "2", "29104", "58.208", "4.83", "281.14" },
-            new[] { "N16", "28", "2", "29104", "58.208", "4.83", "281.14" },
-            new[] { "N17", "28", "2", "25504", "51.008", "4.83", "246.37" },
-            new[] { "N18", "28", "16", "12126", "194.016", "4.83", "937.10" },
-            new[] { "N19", "28", "24", "9226", "221.424", "4.83", "1069.48" },
-            new[] { "N20", "16", "16", "8930", "142.88", "1.58", "225.75" },
+            new[]
+            {
+                "N1",
+                $"{n1.Diameter:0}",
+                $"{n1.Count}",
+                $"{n1.Length:0}",
+                $"{n1.Length * n1.Count / 1000:0.###}",
+                "4.83",
+                $"{n1.Length * n1.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N2",
+                $"{n2.Diameter:0}",
+                $"{n2.Count}",
+                $"{n2.Length:0}",
+                $"{n2.Length * n2.Count / 1000:0.###}",
+                "4.83",
+                $"{n2.Length * n2.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N3",
+                $"{n3.Diameter:0}",
+                $"{n3.Count}",
+                $"{n3.Length:0}",
+                $"{n3.Length * n3.Count / 1000:0.###}",
+                "4.83",
+                $"{n3.Length * n3.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N4",
+                $"{n4.Diameter:0}",
+                $"{n4.Count}",
+                $"{n4.Length:0}",
+                $"{n4.Length * n4.Count / 1000:0.###}",
+                "4.83",
+                $"{n4.Length * n4.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N5",
+                $"{n5.Diameter:0}",
+                $"{n5.Count}",
+                $"{n5.Length:0}",
+                $"{n5.Length * n5.Count / 1000:0.###}",
+                "4.83",
+                $"{n5.Length * n5.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N6",
+                $"{n6.Diameter:0}",
+                $"{n6.Count}",
+                $"{n6.Length:0}",
+                $"{n6.Length * n6.Count / 1000:0.###}",
+                "4.83",
+                $"{n6.Length * n6.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N7",
+                $"{n7.Diameter:0}",
+                $"{n7.Count}",
+                $"{n7.Length:0}",
+                $"{n7.Length * n7.Count / 1000:0.###}",
+                "4.83",
+                $"{n7.Length * n7.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N8",
+                $"{n8.Diameter:0}",
+                $"{n8.Count}",
+                $"{n8.Length:0}",
+                $"{n8.Length * n8.Count / 1000:0.###}",
+                "4.83",
+                $"{n8.Length * n8.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N9",
+                $"{n9.Diameter:0}",
+                $"{n9.Count}",
+                $"{n9.Length:0}",
+                $"{n9.Length * n9.Count / 1000:0.###}",
+                "4.83",
+                $"{n9.Length * n9.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N10",
+                $"{n10.Diameter:0}",
+                $"{n10.Count}",
+                $"{n10.Length:0}",
+                $"{n10.Length * n10.Count / 1000:0.###}",
+                "4.83",
+                $"{n10.Length * n10.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N11",
+                $"{n11.Diameter:0}",
+                $"{n11.Count}",
+                $"{n11.Length:0}",
+                $"{n11.Length * n11.Count / 1000:0.###}",
+                "4.83",
+                $"{n11.Length * n11.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N12",
+                $"{n12.Diameter:0}",
+                $"{n12.Count}",
+                $"{n12.Length:0}",
+                $"{n12.Length * n12.Count / 1000:0.###}",
+                "4.83",
+                $"{n12.Length * n12.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N13",
+                $"{n13.Diameter:0}",
+                $"{n13.Count}",
+                $"{n13.Length:0}",
+                $"{n13.Length * n13.Count / 1000:0.###}",
+                "4.83",
+                $"{n13.Length * n13.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N14",
+                $"{n14.Diameter:0}",
+                $"{n14.Count}",
+                $"{n14.Length:0}",
+                $"{n14.Length * n14.Count / 1000:0.###}",
+                "4.83",
+                $"{n14.Length * n14.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N15",
+                $"{n15.Diameter:0}",
+                $"{n15.Count}",
+                $"{n15.Length:0}",
+                $"{n15.Length * n15.Count / 1000:0.###}",
+                "4.83",
+                $"{n15.Length * n15.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N16",
+                $"{n16.Diameter:0}",
+                $"{n16.Count}",
+                $"{n16.Length:0}",
+                $"{n16.Length * n16.Count / 1000:0.###}",
+                "4.83",
+                $"{n16.Length * n16.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N17",
+                $"{n17.Diameter:0}",
+                $"{n17.Count}",
+                $"{n17.Length:0}",
+                $"{n17.Length * n17.Count / 1000:0.###}",
+                "4.83",
+                $"{n17.Length * n17.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N18",
+                $"{n18.Diameter:0}",
+                $"{n18.Count}",
+                $"{n18.Length:0}",
+                $"{n18.Length * n18.Count / 1000:0.###}",
+                "4.83",
+                $"{n18.Length * n18.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N19",
+                $"{n19.Diameter:0}",
+                $"{n19.Count}",
+                $"{n19.Length:0}",
+                $"{n19.Length * n19.Count / 1000:0.###}",
+                "4.83",
+                $"{n19.Length * n19.Count * 4.83 / 1000:0.##}",
+            },
+            new[]
+            {
+                "N20",
+                $"{n20.Diameter:0}",
+                $"{n20.Count}",
+                $"{n20.Length:0}",
+                $"{n20.Length * n20.Count / 1000:0.###}",
+                "1.58",
+                $"{n20.Length * n20.Count * 1.58 / 1000:0.##}",
+            },
             new[] { "N21", "16", "16", "7920", "126.72", "1.58", "200.22" },
             new[] { "N22", "16", "16", "4700", "75.2", "1.58", "118.82" },
             new[] { "N23", "Φ12", "552", "1030", "568.56", "0.888", "504.88" },
@@ -1053,11 +1673,11 @@ public static partial class GeneratedDraw
             [
                 CadDraw.Polyline(
                     [
-                        CadDraw.V(-FrameWidth / 2 / FrameAngleSin, -FrameHeight),
-                        CadDraw.V(FrameWidth / 2 / FrameAngleSin, -FrameHeight),
-                        CadDraw.V(FrameWidth / 2 / FrameAngleSin, 0),
-                        CadDraw.V(-FrameWidth / 2 / FrameAngleSin, 0),
-                        CadDraw.V(-FrameWidth / 2 / FrameAngleSin, -FrameHeight),
+                        CadDraw.V(-FrameHalfWidthOnSlope, -FrameHeight),
+                        CadDraw.V(FrameHalfWidthOnSlope, -FrameHeight),
+                        CadDraw.V(FrameHalfWidthOnSlope, 0),
+                        CadDraw.V(-FrameHalfWidthOnSlope, 0),
+                        CadDraw.V(-FrameHalfWidthOnSlope, -FrameHeight),
                     ],
                     doc.Layer(CadLayers.B04)
                 ),
@@ -1114,7 +1734,7 @@ public static partial class GeneratedDraw
         doc.AddEntities(
             [
                 CadDraw.RotatedDimension(
-                    CadDraw.P(-FrameWidth / 2 / FrameAngleSin, -FrameHeight, 0),
+                    CadDraw.P(-FrameHalfWidthOnSlope, -FrameHeight, 0),
                     CadDraw.P(
                         -(FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin,
                         -FrameHeight,
@@ -1143,13 +1763,13 @@ public static partial class GeneratedDraw
                         -FrameHeight,
                         0
                     ),
-                    CadDraw.P(FrameWidth / 2 / FrameAngleSin, -FrameHeight, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight, 0),
                     -90,
                     text: $"{FrameSideWallThickness}/sin{FrameAngle}\u00b0"
                 ),
                 CadDraw.RotatedDimension(
-                    CadDraw.P(-FrameWidth / 2 / FrameAngleSin, -FrameHeight, 0),
-                    CadDraw.P(FrameWidth / 2 / FrameAngleSin, -FrameHeight, 0),
+                    CadDraw.P(-FrameHalfWidthOnSlope, -FrameHeight, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight, 0),
                     -150,
                     text: $"{FrameWidth}/sin{FrameAngle}\u00b0"
                 ),
@@ -1160,31 +1780,23 @@ public static partial class GeneratedDraw
         doc.AddEntities(
             [
                 CadDraw.RotatedDimension(
-                    CadDraw.P(FrameWidth / 2 / FrameAngleSin, 0, 0),
-                    CadDraw.P(FrameWidth / 2 / FrameAngleSin, -FrameTopSlabThickness, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, 0, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameTopSlabThickness, 0),
                     90
                 ),
                 CadDraw.RotatedDimension(
-                    CadDraw.P(FrameWidth / 2 / FrameAngleSin, -FrameTopSlabThickness, 0),
-                    CadDraw.P(
-                        FrameWidth / 2 / FrameAngleSin,
-                        -FrameHeight + FrameBottomSlabThickness,
-                        0
-                    ),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameTopSlabThickness, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight + FrameBottomSlabThickness, 0),
                     90
                 ),
                 CadDraw.RotatedDimension(
-                    CadDraw.P(
-                        FrameWidth / 2 / FrameAngleSin,
-                        -FrameHeight + FrameBottomSlabThickness,
-                        0
-                    ),
-                    CadDraw.P(FrameWidth / 2 / FrameAngleSin, -FrameHeight, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight + FrameBottomSlabThickness, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight, 0),
                     90
                 ),
                 CadDraw.RotatedDimension(
-                    CadDraw.P(FrameWidth / 2 / FrameAngleSin, 0, 0),
-                    CadDraw.P(FrameWidth / 2 / FrameAngleSin, -FrameHeight, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, 0, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight, 0),
                     150
                 ),
             ]
@@ -5818,15 +6430,6 @@ public static partial class GeneratedDraw
                 annotationLayer
             )
         );
-        doc.Entities.Add(
-            CadDraw.Text(
-                "24115",
-                CadDraw.P(-47.9811011413067, -1027.19488081657, 0),
-                25,
-                annotationLayer,
-                rotation: 0
-            )
-        );
     }
 
     /// <summary>
@@ -5840,18 +6443,21 @@ public static partial class GeneratedDraw
         lines.AddRange(
             CadDraw.LinesBetweenBoundaries(
                 CadDraw.Polyline(
-                    [new XY(-FrameInnerRebarX, -FrameCover), new XY(0, -FrameCover)],
+                    [
+                        new XY(-FrameInnerRebarX, -SideCoverThickness),
+                        new XY(0, -SideCoverThickness),
+                    ],
                     doc.Layer(CadLayers.B01)
                 ),
                 CadDraw.Polyline(
                     [
-                        new XY(-FrameInnerRebarX, -(FrameTopSlabThickness - FrameCover)),
+                        new XY(-FrameInnerRebarX, -(FrameTopSlabThickness - SideCoverThickness)),
                         new(
                             -(FrameWidth / 2 - FrameSideWallThickness - FrameTopChamferLength)
                                 / FrameAngleSin,
-                            -(FrameTopSlabThickness - FrameCover)
+                            -(FrameTopSlabThickness - SideCoverThickness)
                         ),
-                        new(0, -(FrameTopSlabThickness - FrameCover)),
+                        new(0, -(FrameTopSlabThickness - SideCoverThickness)),
                     ],
                     doc.Layer(CadLayers.B01)
                 ),
@@ -5865,8 +6471,8 @@ public static partial class GeneratedDraw
             CadDraw.LinesBetweenBoundaries(
                 CadDraw.Polyline(
                     [
-                        new XY(-FrameInnerRebarX, FrameCover - FrameHeight),
-                        new XY(0, FrameCover - FrameHeight),
+                        new XY(-FrameInnerRebarX, SideCoverThickness - FrameHeight),
+                        new XY(0, SideCoverThickness - FrameHeight),
                     ],
                     doc.Layer(CadLayers.B01)
                 ),
@@ -5874,14 +6480,14 @@ public static partial class GeneratedDraw
                     [
                         new XY(
                             -FrameInnerRebarX,
-                            FrameBottomSlabThickness - FrameCover - FrameHeight
+                            FrameBottomSlabThickness - SideCoverThickness - FrameHeight
                         ),
                         new(
                             -(FrameWidth / 2 - FrameSideWallThickness - FrameTopChamferLength)
                                 / FrameAngleSin,
-                            FrameBottomSlabThickness - FrameCover - FrameHeight
+                            FrameBottomSlabThickness - SideCoverThickness - FrameHeight
                         ),
-                        new(0, FrameBottomSlabThickness - FrameCover - FrameHeight),
+                        new(0, FrameBottomSlabThickness - SideCoverThickness - FrameHeight),
                     ],
                     doc.Layer(CadLayers.B01)
                 ),
@@ -5901,14 +6507,14 @@ public static partial class GeneratedDraw
                 CadDraw.Line(
                     new XYZ(
                         -FrameOuterRebarX - FrameRebarSpacing,
-                        -(FrameTopSlabThickness - FrameCover - FrameRebarSpacing)
+                        -(FrameTopSlabThickness - SideCoverThickness - FrameRebarSpacing)
                             - 12.5
                             - FrameRebarSpacing,
                         0
                     ),
                     new XYZ(
                         -FrameInnerRebarX + FrameRebarSpacing,
-                        -(FrameTopSlabThickness - FrameCover - FrameRebarSpacing)
+                        -(FrameTopSlabThickness - SideCoverThickness - FrameRebarSpacing)
                             - 12.5
                             - FrameRebarSpacing,
                         0
@@ -5918,8 +6524,12 @@ public static partial class GeneratedDraw
                 new XYZ(0, -12.5, 0),
                 (int)
                     Math.Floor(
-                        (FrameBodyCenterY - FrameTopSlabThickness + FrameCover + FrameRebarSpacing)
-                            / 12.5
+                        (
+                            FrameBodyCenterY
+                            - FrameTopSlabThickness
+                            + SideCoverThickness
+                            + FrameRebarSpacing
+                        ) / 12.5
                     )
             )
         );
@@ -5938,7 +6548,7 @@ public static partial class GeneratedDraw
         AddSymmetricArray(
             doc,
             -FrameOuterRebarX,
-            -(FrameCover + FrameRebarSpacing),
+            -(SideCoverThickness + FrameRebarSpacing),
             new(
                 SteelSection.Insert(doc),
                 12.5,
@@ -5950,7 +6560,7 @@ public static partial class GeneratedDraw
         AddSymmetricArray(
             doc,
             -FrameInnerRebarX,
-            -(FrameCover + FrameRebarSpacing),
+            -(SideCoverThickness + FrameRebarSpacing),
             new(SteelSection.Insert(doc), 12.5, 0, (int)Math.Floor(FrameInnerRebarX / 12.5) + 1),
             -FrameHeight / 2
         ); // 外框：中间部分
@@ -5958,14 +6568,15 @@ public static partial class GeneratedDraw
         AddSymmetricArray(
             doc,
             -FrameOuterRebarX,
-            -(FrameCover + FrameRebarSpacing),
+            -(SideCoverThickness + FrameRebarSpacing),
             new(
                 SteelSection.Insert(doc),
                 0,
                 -12.5,
                 (int)
                     Math.Floor(
-                        (FrameTopSlabThickness - 2 * FrameCover - 2 * FrameRebarSpacing) / 12.5
+                        (FrameTopSlabThickness - 2 * SideCoverThickness - 2 * FrameRebarSpacing)
+                            / 12.5
                     ) + 1
             ),
             -FrameHeight / 2
@@ -5973,15 +6584,19 @@ public static partial class GeneratedDraw
         AddSymmetricArray(
             doc,
             -FrameOuterRebarX,
-            -(FrameTopSlabThickness - FrameCover - FrameRebarSpacing),
+            -(FrameTopSlabThickness - SideCoverThickness - FrameRebarSpacing),
             new(
                 SteelSection.Insert(doc),
                 0,
                 -12.5,
                 (int)
                     Math.Floor(
-                        (FrameBodyCenterY - FrameTopSlabThickness + FrameCover + FrameRebarSpacing)
-                            / 12.5
+                        (
+                            FrameBodyCenterY
+                            - FrameTopSlabThickness
+                            + SideCoverThickness
+                            + FrameRebarSpacing
+                        ) / 12.5
                     ) + 1
             ),
             -FrameBodyCenterY
@@ -5990,22 +6605,26 @@ public static partial class GeneratedDraw
         AddSymmetricArray(
             doc,
             -FrameInnerRebarX,
-            -(FrameTopSlabThickness - FrameCover - FrameRebarSpacing),
+            -(FrameTopSlabThickness - SideCoverThickness - FrameRebarSpacing),
             new(SteelSection.Insert(doc), 12.5, 0, (int)Math.Floor(FrameInnerRebarX / 12.5) + 1),
             -FrameBodyCenterY
         ); // 内框：中间部分
         AddSymmetricArray(
             doc,
             -FrameInnerRebarX,
-            -(FrameTopSlabThickness - FrameCover - FrameRebarSpacing),
+            -(FrameTopSlabThickness - SideCoverThickness - FrameRebarSpacing),
             new(
                 SteelSection.Insert(doc),
                 0,
                 -12.5,
                 (int)
                     Math.Floor(
-                        (FrameBodyCenterY - FrameTopSlabThickness + FrameCover + FrameRebarSpacing)
-                            / 12.5
+                        (
+                            FrameBodyCenterY
+                            - FrameTopSlabThickness
+                            + SideCoverThickness
+                            + FrameRebarSpacing
+                        ) / 12.5
                     ) + 1
             ),
             -FrameBodyCenterY

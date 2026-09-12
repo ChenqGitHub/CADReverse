@@ -16,7 +16,12 @@ namespace DwgSharpKit.Rebar;
 /// Text 为该段（本顶点 → 下一顶点）的标注文本覆盖；null 时自动采用该段 1:1 长度；
 /// 末顶点的 Text 忽略。
 /// </summary>
-public readonly record struct RebarVertex(XY Point, double Bulge = 0, string? Text = null);
+public readonly record struct RebarVertex(
+    XY Point,
+    double Bulge = 0,
+    string? Text = null,
+    double Scale = 1
+);
 
 /// <summary>
 /// 钢筋大样绘制参数。
@@ -50,11 +55,17 @@ public sealed class RebarDetailOptions
 public static class RebarDetail
 {
     /// <summary>
-    /// 便捷构造一个顶点（仿 <see cref="CadDraw.V"/>）。文本给 SectionText= 该顶点到下一顶点段；
-    /// <paramref name="bulge"/> 为该顶点到下一顶点段的凸度，默认 0 = 直线段（统一入口，不再区分有弧/无弧）。
+    /// 便捷构造一个不带标注覆盖文本的顶点（仿 <see cref="CadDraw.V"/>）。
+    /// 自动标注使用实际距离乘以 <paramref name="scale"/>；默认比例为 1。
     /// </summary>
-    public static RebarVertex V(double x, double y, string? text = null, double bulge = 0) =>
-        new(new XY(x, y), bulge, text);
+    public static RebarVertex V(double x, double y, double scale = 1, double bulge = 0) =>
+        new(new XY(x, y), bulge, null, scale);
+
+    /// <summary>
+    /// 便捷构造一个带显式标注文本的顶点。使用此重载时不设置距离比例。
+    /// </summary>
+    public static RebarVertex V(double x, double y, string text, double bulge = 0) =>
+        new(new XY(x, y), bulge, text, 1);
 
     /// <summary>
     /// 按顶点序列构建钢筋大样图元，**返回但不写入文档**，供使用者自行添加或
@@ -89,8 +100,9 @@ public static class RebarDetail
                 var a = new XYZ(vertices[i].Point.X, vertices[i].Point.Y, 0);
                 var b = new XYZ(vertices[i + 1].Point.X, vertices[i + 1].Point.Y, 0);
 
-                double len = (b - a).GetLength();
-                string text = vertices[i].Text ?? FormatLength(len);
+                // 两点距离只是弦长；有 Bulge 时，标注应使用该段圆弧的真实长度。
+                double len = SegmentLength(a, b, vertices[i].Bulge);
+                string text = vertices[i].Text ?? FormatLength(len * vertices[i].Scale);
 
                 var dir = (b - a).Normalize();
                 var normal = new XYZ(-dir.Y, dir.X, 0);
@@ -113,27 +125,45 @@ public static class RebarDetail
         return entities;
     }
 
-    private static double SegmentRotation(XYZ dir)
+
+
+    private static double SegmentLength(XYZ a, XYZ b, double bulge)
     {
-        // 水平段的标注始终保持水平；其它方向沿线旋转，并折回到可读角度。
-        // CAD 坐标经过变换后可能留下极小的 Y 误差，按 1e-6 归入水平线。
-        const double epsilon = 1e-4;
-        if (Math.Abs(dir.Y) < epsilon)
+        return SegmentLength(
+            new XY(a.X, a.Y),
+            new XY(b.X, b.Y),
+            bulge
+        );
+    }
+
+    internal static double PolylineLength(IReadOnlyList<RebarVertex> vertices)
+    {
+        double sum = 0;
+        for (int i = 0; i + 1 < vertices.Count; i++)
         {
-            return 0;
+            sum += SegmentLength(vertices[i].Point, vertices[i + 1].Point, vertices[i].Bulge);
         }
 
-        double angle = Math.Atan2(dir.Y, dir.X);
-        if (angle > Math.PI / 2)
+        return sum;
+    }
+
+    private static double SegmentLength(XY a, XY b, double bulge)
+    {
+        double dx = b.X - a.X;
+        double dy = b.Y - a.Y;
+        double chord = Math.Sqrt(dx * dx + dy * dy);
+        double absoluteBulge = Math.Abs(bulge);
+
+        if (chord == 0 || absoluteBulge < 1e-12)
         {
-            angle -= Math.PI;
-        }
-        else if (angle < -Math.PI / 2)
-        {
-            angle += Math.PI;
+            return chord;
         }
 
-        return angle;
+        // bulge = tan(includedAngle / 4), and arcLength = radius * includedAngle.
+        return chord
+            * (1 + bulge * bulge)
+            * Math.Abs(Math.Atan(bulge))
+            / absoluteBulge;
     }
 
     internal static string FormatLength(double len) =>
