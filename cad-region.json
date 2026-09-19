@@ -3,44 +3,17 @@
   "purpose": "CAD region for semantic recognition and C# generation",
   "source": {
     "application": "AutoCAD",
-    "document": "框架桥参数化.dwg",
+    "document": "04 桥墩顶帽钢筋图.dwg",
     "layout": "Model",
-    "exported_at_utc": "2026-09-06T18:25:20.411703+00:00"
+    "exported_at_utc": "2026-09-18T08:05:12.692480+00:00"
   },
   "region": {
     "mode": "screen",
     "min": null,
     "max": null
   },
-  "entity_count": 1,
-  "entities": [
-    {
-      "id": 1,
-      "handle": "542F",
-      "object_name": "AcDbRotatedDimension",
-      "layer": "B-03 标注_指示标注",
-      "color_index": 256,
-      "line_type": "ByLayer",
-      "line_weight": -1,
-      "line_type_scale": 1.0,
-      "visible": true,
-      "bounding_box": null,
-      "geometry": {
-        "text": "52×12.5",
-        "measurement": 650.0,
-        "text_position": [
-          7534.979274369102,
-          3636.3810914420633,
-          0.0
-        ],
-        "start_point": null,
-        "end_point": null,
-        "dimension_line_point": null,
-        "rotation": 0.0,
-        "dimension_style": "仿宋 1-100"
-      }
-    }
-  ],
+  "entity_count": 0,
+  "entities": [],
   "repetition_candidates": [],
   "unsupported_object_names": []
 }

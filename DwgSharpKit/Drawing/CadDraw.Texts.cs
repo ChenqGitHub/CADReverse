@@ -29,8 +29,10 @@ public static partial class CadDraw
         string? textStyle = null,
         TextHorizontalAlignment horizontalAlignment = TextHorizontalAlignment.Left,
         TextVerticalAlignmentType verticalAlignment = TextVerticalAlignmentType.Baseline
-    ) =>
-        new()
+    )
+    {
+        var style = layer.Document.TextStyles[textStyle ?? CadTextStyles.JstiSimsun.Name];
+        return new()
         {
             Value = value,
             InsertPoint = insertPoint,
@@ -40,11 +42,10 @@ public static partial class CadDraw
             Height = height,
             Rotation = NormalizeTextRotation(rotation),
             Layer = layer,
-            Style = layer.Document.TextStyles[textStyle ?? CadTextStyles.JstiSimsun.Name],
-            WidthFactor = layer
-                .Document.TextStyles[textStyle ?? CadTextStyles.JstiSimsun.Name]
-                .Width,
+            Style = style,
+            WidthFactor = style.Width,
         };
+    }
 
     private static double NormalizeTextRotation(double rotation)
     {

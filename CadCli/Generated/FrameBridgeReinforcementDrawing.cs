@@ -1,6 +1,7 @@
 using ACadSharp;
 using ACadSharp.Entities;
 using CSMath;
+using CSMath.Extensions;
 using DwgSharpKit;
 using DwgSharpKit.Blocks;
 using DwgSharpKit.Rebar;
@@ -1308,20 +1309,21 @@ public static partial class GeneratedDraw
             new XYZ(-(double)(FrameHalfWidthOnSlope - SideCoverThickness), -FrameHeight / 2, 0)
         );
         n20.Place(doc, new XYZ(-FrameInnerRebarPlacementX, -FrameHeight / 2, 0));
+        var rotate180 = new Transform { EulerRotation = new XYZ(0, 0, Math.PI) };
         n18.Place(
             doc,
             new XYZ((double)(FrameHalfWidthOnSlope - SideCoverThickness), -FrameHeight / 2, 0),
-            transform: new PlaceTransform() { Rotation = Math.PI }
+            transform: rotate180
         );
         n19.Place(
             doc,
             new XYZ((double)(FrameHalfWidthOnSlope - SideCoverThickness), -FrameHeight / 2, 0),
-            transform: new PlaceTransform() { Rotation = Math.PI }
+            transform: rotate180
         );
         n20.Place(
             doc,
             new XYZ(FrameInnerRebarPlacementX, -FrameHeight / 2, 0),
-            transform: new PlaceTransform() { Rotation = Math.PI }
+            transform: rotate180
         );
 
         #endregion
@@ -1939,142 +1941,133 @@ public static partial class GeneratedDraw
     /// </summary>
     private static void DrawObtuseCornerReinforcementLayout(CadDocument doc)
     {
-        // Generated from cad-region.json: obtuse-corner reinforcement layout.
         var rebarLayer = doc.Layer(CadLayers.B01);
         var annotationLayer = doc.Layer(CadLayers.B03);
 
-        // The extracted sketch is local and much smaller than the quantity
-        // table. Scale and place both parts here as one compact region.
-        const double sketchScale = 1;
-        const double sketchOriginX = -30000;
-        const double sketchOriginY = -57000;
-        XYZ P(double x, double y) =>
-            CadDraw.P(sketchOriginX + x * sketchScale, sketchOriginY + y * sketchScale, 0);
-        XY V(double x, double y) =>
-            new(sketchOriginX + x * sketchScale, sketchOriginY + y * sketchScale);
+        const int horizontalCount = 30;
+        const int verticalCount = 20;
+        const double horizontalSpacing = 12.5;
+        const double verticalSpacing = 12.5;
+
+        var dy = verticalCount * verticalSpacing;
+        var dx = horizontalCount * horizontalSpacing;
+        var tanFrameAngle = Math.Tan(FrameAngle / 180 * Math.PI);
+        var xOffset = dx / tanFrameAngle;
+        var insertPoint = new XYZ(-21500, -50000, 0);
 
         TitleBlock.Add(
             doc,
             "框架顶板上部和底板下部边墙钝角加强钢筋布置示意图",
             "",
-            CadDraw.P(-21500, -50000),
-            18
+            CadDraw.P(insertPoint.X + xOffset, insertPoint.Y),
+            5
         );
 
-        // AI 识别复刻：第一批 cad-region.json 中的两个线性阵列。
-        // 源图 gj 映射为 B-01；源图 B-03 标注_指示标注映射为 B-03。
-        // 两组均沿 X 方向每 30 个单位平移，共 24 个元素。
-        doc.AddTranslated(
-            P(433.2989248270278, 359.1042417199187),
+        // 横纵筋
+
+        var origin = CadDraw.P(insertPoint.X - 500 + xOffset, insertPoint.Y - 500);
+
+        var structureEntitys = new List<Entity>();
+
+        // 钢筋
+        structureEntitys.AddRange(
             CadDraw.EntityArray(
-                CadDraw.Line(
-                    CadDraw.P(0, 0, 0),
-                    CadDraw.P(11.27631144942643 * sketchScale, -4.1042417199169 * sketchScale, 0),
-                    annotationLayer
-                ),
-                CadDraw.P(30 * sketchScale, 0, 0),
-                24
+                CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(dx, 0, 0), rebarLayer),
+                CadDraw.P(verticalSpacing / tanFrameAngle, verticalSpacing, 0),
+                verticalCount + 1
             )
         );
-
-        doc.AddTranslated(
-            P(606.03342472644, 490),
+        structureEntitys.AddRange(
             CadDraw.EntityArray(
-                CadDraw.Line(
-                    CadDraw.P(0, 0, 0),
-                    CadDraw.P(-574.0735597332762 * sketchScale, -480 * sketchScale, 0),
-                    rebarLayer
-                ),
-                CadDraw.P(30 * sketchScale, 0, 0),
-                24
+                CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(dy / tanFrameAngle, dy, 0), rebarLayer),
+                CadDraw.P(horizontalSpacing, 0, 0),
+                horizontalCount + 1
             )
         );
 
-        // AI 识别复刻：第二批 cad-region.json 中的两个线性阵列。
-        // 两组均沿 (35.8795974333334, 30, 0) 平移，共 17 个元素。
-        doc.AddTranslated(
-            P(31.95986579316377, 10),
-            CadDraw.EntityArray(
-                CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(690 * sketchScale, 0, 0), rebarLayer),
-                CadDraw.P(35.8795974333334 * sketchScale, 30 * sketchScale, 0),
-                17
-            )
-        );
-        doc.AddTranslated(
-            P(165.70492492870835, 9.999999999996362),
-            CadDraw.EntityArray(
-                CadDraw.Line(
-                    CadDraw.P(0, 0, 0),
-                    CadDraw.P(-11.824894782 * sketchScale, -2.042513989996223 * sketchScale, 0),
-                    annotationLayer
-                ),
-                CadDraw.P(35.8795974333334 * sketchScale, 30 * sketchScale, 0),
-                17
-            )
-        );
-
-        // Outer obtuse-corner boundary and leader geometry.
-        doc.Entities.Add(
-            CadDraw.Line(
-                P(105.99153499659587, -39.928143739434745),
-                P(49.53380766288319, -39.928143739434745),
-                annotationLayer
-            )
-        );
-        doc.Entities.Add(
-            CadDraw.Line(P(-98.04013417093665, 50), P(71.73598924546968, 50), annotationLayer)
-        );
-        doc.Entities.Add(
-            CadDraw.Line(
-                P(739.7784838620137, 490),
-                P(106.32612287750817, -39.64838484732536),
-                annotationLayer
-            )
-        );
-        doc.Entities.Add(
-            CadDraw.Line(P(351.31399388602586, 355), P(1134.5752362764615, 355), annotationLayer)
-        );
-        doc.Entities.Add(
-            CadDraw.Polyline(
-                [
-                    V(597.9932905554888, 500),
-                    V(0, 0),
-                    V(236.95986582906335, 0),
-                    V(236.95986582906335, 30),
-                    V(266.95986582906335, -30),
-                    V(266.95986582906335, 0),
-                    V(729.999999964114, 0),
-                    V(1327.9932905196026, 499.99999999999994),
-                ],
-                annotationLayer,
-                closed: true
-            )
-        );
-
-        // N27/N28 leader labels.
-        doc.Entities.Add(
-            CadDraw.Text("N27", P(355.72723430710903, 359.93762364465874), 27, annotationLayer)
-        );
-        doc.Entities.Add(
-            CadDraw.Text("N28", P(52.07538770890096, -34.774013947098865), 27, annotationLayer)
-        );
-
-        // Dimension annotations reconstructed from measured geometry and text position.
-        doc.Entities.Add(
+        // 标注
+        structureEntitys.Add(
             CadDraw.RotatedDimension(
-                P(0, -39.928143739434745),
-                P(0, 440.07185626056525),
+                origin,
+                origin.Add(new XYZ(0, dy, 0)),
                 90,
-                text: "20×12.5cm"
+                text: $"{verticalCount}×{verticalSpacing:0.0}cm"
             )
         );
-        doc.Entities.Add(
+        structureEntitys.Add(
             CadDraw.RotatedDimension(
-                P(606.03342472644, 490),
-                P(1296.03342472644, 490),
+                origin.Add(new XYZ(dy / tanFrameAngle, dy, 0)),
+                origin.Add(new XYZ(dx + dy / tanFrameAngle, dy, 0)),
                 90,
-                text: "30×12.5cm"
+                text: $"{horizontalCount}×{horizontalSpacing:0.0}cm"
             )
+        );
+
+        // 结构
+        doc.AddTranslated(origin, structureEntitys);
+
+        var dimEntitys = new List<Entity>();
+        LeaderAnnotationBlock.Add(
+            doc,
+            origin.Add(new XYZ(dy, 0, 0)),
+            origin.Add(new XYZ(dy + dy / 2, 0, 0)),
+            "边墙",
+            5
+        );
+
+        LeaderAnnotationBlock
+            .Add(doc, origin.Add(new XYZ(0, 0, 0)), origin.Add(new XYZ(dx + 10, 0, 0)), "N27", "16")
+            .ForEach(e => e.ApplyTranslation(new XYZ(dy / 2 / tanFrameAngle, dy / 2, 0)));
+
+        LeaderAnnotationBlock
+            .Add(
+                doc,
+                origin,
+                origin.Add(new XYZ((dy + 10) / tanFrameAngle, dy + 10, 0)),
+                "N28",
+                "16"
+            )
+            .ForEach(e => e.ApplyTranslation(new XYZ(dx / 2, 0, 0)));
+
+        // 水平标注线
+        var diml2 = CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(-11, -4, 0), annotationLayer);
+        diml2.ApplyTranslation(new XYZ(dy / tanFrameAngle / 2, dy / 2, 0));
+
+        dimEntitys.AddRange(
+            CadDraw.EntityArray(diml2, CadDraw.P(horizontalSpacing, 0, 0), horizontalCount + 1)
+        );
+
+        // 竖直标注线
+        var diml = CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(4, -11, 0), annotationLayer);
+        diml.ApplyRotation(XYZ.AxisZ, FrameAngle);
+        diml.ApplyTranslation(new XYZ(dx / 2, 0, 0));
+
+        dimEntitys.AddRange(
+            CadDraw.EntityArray(
+                diml,
+                CadDraw.P(verticalSpacing / tanFrameAngle, verticalSpacing, 0),
+                verticalCount + 1
+            )
+        );
+
+        doc.AddTranslated(origin, dimEntitys);
+
+        // 标注
+
+        doc.AddTranslated(
+            origin,
+            [
+                CadDraw.Polyline(
+                    [
+                        CadDraw.V(-10 - 10 / tanFrameAngle, -10),
+                        CadDraw.V(-10 + (dy + 10) / tanFrameAngle, dy + 10),
+                        CadDraw.V(dx + 10 + (dy + 10) / tanFrameAngle, dy + 10),
+                        CadDraw.V(dx + 10 - 10 / tanFrameAngle, -10),
+                    ],
+                    annotationLayer,
+                    closed: true
+                ),
+            ]
         );
     }
 
@@ -6557,6 +6550,21 @@ public static partial class GeneratedDraw
             ),
             -FrameHeight / 2
         ); // 外框：左侧壁厚
+
+        doc.AddEntities(
+            [
+                CadDraw.RotatedDimension(
+                    new XYZ(-FrameWidth / 2 / FrameAngleSin, 0, 0),
+                    new XYZ(-FrameInnerRebarX + 12.5, 0, 0),
+                    90
+                ),
+                CadDraw.RotatedDimension(
+                    new XYZ(FrameInnerRebarX - 12.5, 0, 0),
+                    new XYZ(FrameWidth / 2 / FrameAngleSin, 0, 0),
+                    90
+                ),
+            ]
+        );
         AddSymmetricArray(
             doc,
             -FrameInnerRebarX,
@@ -6564,6 +6572,28 @@ public static partial class GeneratedDraw
             new(SteelSection.Insert(doc), 12.5, 0, (int)Math.Floor(FrameInnerRebarX / 12.5) + 1),
             -FrameHeight / 2
         ); // 外框：中间部分
+
+        doc.AddEntities(
+            [
+                CadDraw.RotatedDimension(
+                    new XYZ(-FrameInnerRebarX + 12.5, 0, 0),
+                    new XYZ(-FrameInnerRebarX + Math.Floor(FrameInnerRebarX / 12.5) * 12.5, 0, 0),
+                    90,
+                    text: $"{Math.Floor(FrameInnerRebarX / 12.5) - 1}×{12.5}"
+                ),
+                CadDraw.RotatedDimension(
+                    new XYZ(-FrameInnerRebarX + Math.Floor(FrameInnerRebarX / 12.5) * 12.5, 0, 0),
+                    new XYZ(FrameInnerRebarX - Math.Floor(FrameInnerRebarX / 12.5) * 12.5, 0, 0),
+                    90
+                ),
+                CadDraw.RotatedDimension(
+                    new XYZ(FrameInnerRebarX - Math.Floor(FrameInnerRebarX / 12.5) * 12.5, 0, 0),
+                    new XYZ(FrameInnerRebarX - 12.5, 0, 0),
+                    90,
+                    text: $"{Math.Floor(FrameInnerRebarX / 12.5) - 1}×{12.5}"
+                ),
+            ]
+        );
 
         AddSymmetricArray(
             doc,
@@ -6577,10 +6607,29 @@ public static partial class GeneratedDraw
                     Math.Floor(
                         (FrameTopSlabThickness - 2 * SideCoverThickness - 2 * FrameRebarSpacing)
                             / 12.5
-                    ) + 1
+                    )
             ),
-            -FrameHeight / 2
+            -FrameHeight / 2,
+            includeHorizontalSymmetry: false
         ); // 外框：上部壁厚
+        AddSymmetricArray(
+            doc,
+            -FrameOuterRebarX,
+            SideCoverThickness + FrameRebarSpacing - FrameHeight,
+            new(
+                SteelSection.Insert(doc),
+                0,
+                12.5,
+                (int)
+                    Math.Floor(
+                        (FrameBottomSlabThickness - 2 * SideCoverThickness - 2 * FrameRebarSpacing)
+                            / 12.5
+                    )
+            ),
+            -FrameHeight / 2,
+            includeHorizontalSymmetry: false
+        ); // 外框：下部壁厚
+
         AddSymmetricArray(
             doc,
             -FrameOuterRebarX,
@@ -6639,7 +6688,8 @@ public static partial class GeneratedDraw
         double x,
         double y,
         EntityArrayPattern pattern,
-        double horizontalAxisY
+        double horizontalAxisY,
+        bool includeHorizontalSymmetry = true
     )
     {
         IEnumerable<Entity> Templates(double stepX, double stepY) =>
@@ -6648,19 +6698,25 @@ public static partial class GeneratedDraw
         // 原始 1/4 断面。
         doc.AddTransformed(new XYZ(x, y, 0), Templates(pattern.StepX, pattern.StepY));
 
-        // 关于水平中心线镜像：反向 Y 步进，避免块插入实体负缩放失效。
-        doc.AddTransformed(
-            new XYZ(x, 2 * horizontalAxisY - y, 0),
-            Templates(pattern.StepX, -pattern.StepY)
-        );
+        if (includeHorizontalSymmetry)
+        {
+            // 关于水平中心线镜像：反向 Y 步进，避免块插入实体负缩放失效。
+            doc.AddTransformed(
+                new XYZ(x, 2 * horizontalAxisY - y, 0),
+                Templates(pattern.StepX, -pattern.StepY)
+            );
+        }
 
         // 关于竖直中心线 x = 0 镜像：反向 X 步进。
         doc.AddTransformed(new XYZ(-x, y, 0), Templates(-pattern.StepX, pattern.StepY));
 
-        // 同时关于水平、竖直中心线镜像。
-        doc.AddTransformed(
-            new XYZ(-x, 2 * horizontalAxisY - y, 0),
-            Templates(-pattern.StepX, -pattern.StepY)
-        );
+        if (includeHorizontalSymmetry)
+        {
+            // 同时关于水平、竖直中心线镜像。
+            doc.AddTransformed(
+                new XYZ(-x, 2 * horizontalAxisY - y, 0),
+                Templates(-pattern.StepX, -pattern.StepY)
+            );
+        }
     }
 }

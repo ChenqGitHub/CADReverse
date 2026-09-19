@@ -5,6 +5,7 @@ using ACadSharp.Entities;
 using ACadSharp.Objects;
 using ACadSharp.Tables;
 using CSMath;
+using CSMath.Extensions;
 using DwgSharpKit.Blocks;
 
 namespace DwgSharpKit.Tables;
@@ -490,11 +491,11 @@ public static class TableHelper
 
         ValidateCellCoordinates(table, rowIndex, columnIndex);
 
-        var horizontal = Normalize(table.HorizontalDirection, "HorizontalDirection");
-        var normal = Normalize(table.Normal, "Normal");
+        var horizontal = NormalizeVector(table.HorizontalDirection, "HorizontalDirection");
+        var normal = NormalizeVector(table.Normal, "Normal");
 
         // horizontal x normal 指向表格的行方向；标准 XY 平面中为 -Y。
-        var rowDirection = Normalize(
+        var rowDirection = NormalizeVector(
             new XYZ(
                 horizontal.Y * normal.Z - horizontal.Z * normal.Y,
                 horizontal.Z * normal.X - horizontal.X * normal.Z,
@@ -561,13 +562,11 @@ public static class TableHelper
         }
     }
 
-    private static XYZ Normalize(XYZ value, string name)
+    private static XYZ NormalizeVector(XYZ value, string name)
     {
-        double length = Math.Sqrt(value.X * value.X + value.Y * value.Y + value.Z * value.Z);
-
-        if (length < 1e-12)
+        if (value.IsZero())
             throw new InvalidOperationException($"{name} 不能是零向量。");
 
-        return new XYZ(value.X / length, value.Y / length, value.Z / length);
+        return value.Normalize();
     }
 }

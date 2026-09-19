@@ -32,7 +32,7 @@ public static class LeaderAnnotationBlock
     /// <param name="spec">钢筋直径（HRB 块）</param>
     /// <param name="scale">整体缩放比例，默认 1</param>
     /// <returns>生成的折线多段线实体</returns>
-    public static (LwPolyline, Insert) Add(
+    public static List<Entity> Add(
         CadDocument doc,
         XYZ first,
         XYZ second,
@@ -61,7 +61,7 @@ public static class LeaderAnnotationBlock
         pl.Vertices[0].Location = new XY(first.X, first.Y);
 
         doc.AddEntities<Entity>([pl, insert]);
-        return (pl, insert);
+        return [pl, insert];
     }
 
     /// <summary>

@@ -8,6 +8,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DwgSharpKit\DwgSharpKit.csproj" />
-    <PackageReference Include="ACadSharp" Version="3.7.1" />
+    <PackageReference Include="ACadSharp" Version="3.7.16" />
   </ItemGroup>
 </Project>

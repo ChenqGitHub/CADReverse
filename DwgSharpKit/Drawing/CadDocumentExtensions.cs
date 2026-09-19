@@ -1,6 +1,7 @@
 using ACadSharp;
 using ACadSharp.Entities;
 using ACadSharp.Tables;
+using CSMath;
 using DwgSharpKit.Standards;
 
 namespace DwgSharpKit
@@ -49,11 +50,25 @@ namespace DwgSharpKit
                 var copy = (Entity)template.Clone();
                 ApplyPlaceTransform(copy, scale, rotation, pivot);
                 copy.ApplyTranslation(move);
+                if (copy is Dimension dimension && dimension.Block != null)
+                {
+                    // Dimensions are displayed through their anonymous block. ACadSharp
+                    // transforms the definition points but leaves block geometry untouched.
+                    // Transform the block contents as well so the visible annotation follows.
+                    foreach (var blockEntity in dimension.Block.Entities)
+                    {
+                        ApplyPlaceTransform(blockEntity, scale, rotation, pivot);
+                        blockEntity.ApplyTranslation(move);
+                        if (blockEntity is TextEntity blockText)
+                        {
+                            blockText.AlignmentPoint = blockText.InsertPoint;
+                        }
+                    }
+                }
                 if (copy is TextEntity text)
                 {
-                    // ACadSharp 的 ApplyRotation/ApplyTranslation 不移动 AlignmentPoint；
-                    // 非基线对齐的 TEXT 在 CAD 中按组码 11（AlignmentPoint）锚定，
-                    // CadDraw.Text 恒使两者相等，这里手工同步，保证文字跟随整组变换
+                    // ApplyTransform may not update AlignmentPoint for non-baseline aligned text;
+                    // sync manually to keep text anchored correctly after compound transforms.
                     text.AlignmentPoint = text.InsertPoint;
                 }
                 onCopy?.Invoke(copy);
@@ -68,7 +83,7 @@ namespace DwgSharpKit
             CSMath.XYZ? pivot
         )
         {
-            var p = pivot ?? new CSMath.XYZ(0, 0, 0);
+            var p = pivot ?? XYZ.Zero;
             if (scale != 1)
             {
                 e.ApplyScaling(new CSMath.XYZ(scale, scale, 1), p);

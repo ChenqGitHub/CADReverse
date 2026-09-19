@@ -8,6 +8,10 @@ var drawings = new (string Title, string FileName, Action<CadDocument> Draw)[]
 {
     ("支座加强钢筋图", "bearing-reinforcement.dwg", GeneratedDraw.DrawBearingReinforcement),
     ("框架桥钢筋图", "frame-bridge-reinforcement.dwg", GeneratedDraw.DrawFrameBridgeReinforcement),
+    ("桥墩构造图", "pier-structure.dwg", GeneratedDraw.DrawPierStructure),
+    ("桥墩钢筋图", "pier-body-reinforcement.dwg", GeneratedDraw.DrawPierBodyReinforcement),
+    ("桥墩顶帽钢筋图", "pier-cap-reinforcement.dwg", GeneratedDraw.PierCapReinforcementDrawing),
+    ("支座垫石钢筋图", "bearing-pedestal.dwg", GeneratedDraw.DrawBearingPedestal),
 };
 
 for (var i = 0; i < drawings.Length; i++)

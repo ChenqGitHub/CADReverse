@@ -6,6 +6,7 @@ using ACadSharp;
 using ACadSharp.Entities;
 using ACadSharp.Tables;
 using CSMath;
+using CSMath.Extensions;
 using DwgSharpKit.Standards;
 
 namespace DwgSharpKit.Rebar;
@@ -47,8 +48,7 @@ public sealed class RebarDetailOptions
 /// <summary>
 /// 钢筋大样公共底层。管线：
 /// 1. 全部图元（折线 + 每段文本标注）以 1:1 局部坐标在原点构建（本类只负责这一步）；
-/// 2. 落地时对同一组图元做 缩放(绕 pivot)→旋转(绕 Z 轴)→平移（<see cref="Rebar.Place"/> /
-///    <see cref="Rebar.PlaceDetail"/> 经 <see cref="DwgSharpKit.CadDocumentExtensions.AddTransformed"/> 完成）；
+/// 2. 落地时对同一组图元应用 <see cref="Transform"/>，再平移到摆放点；
 /// 3. 整组写入文档。
 /// 对称线筋/非对称线筋/箍筋 均基于此。
 /// </summary>

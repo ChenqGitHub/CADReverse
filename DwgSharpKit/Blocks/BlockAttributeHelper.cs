@@ -14,8 +14,10 @@ public static class BlockAttributeHelper
         XYZ insertPoint,
         double height,
         Layer layer
-    ) =>
-        new()
+    )
+    {
+        var style = layer.Document.TextStyles[CadTextStyles.JstiSimsun.Name];
+        return new()
         {
             Tag = tag,
             Prompt = prompt,
@@ -25,11 +27,10 @@ public static class BlockAttributeHelper
             Height = height,
             Layer = layer,
             IsLocked = true,
-            Style = layer.Document.TextStyles[CadTextStyles.JstiSimsun.Name],
-            WidthFactor = layer
-                .Document.TextStyles[CadTextStyles.JstiSimsun.Name]
-                .Width,
+            Style = style,
+            WidthFactor = style.Width,
         };
+    }
 
     public static void Sync(AttributeEntity attribute, AttributeDefinition definition, Insert insert)
     {

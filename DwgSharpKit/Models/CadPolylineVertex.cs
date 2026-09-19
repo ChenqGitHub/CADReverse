@@ -2,13 +2,6 @@ using CSMath;
 
 namespace DwgSharpKit.Models;
 
-public sealed record CadPolyline(
-    List<CadPolylineVertex> Vertices,
-    bool Closed = false,
-    double ConstantWidth = 0,
-    double Elevation = 0
-);
-
 public sealed record CadPolylineVertex(
     XY Point,
     double Bulge = 0,

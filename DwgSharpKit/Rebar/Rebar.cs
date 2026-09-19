@@ -8,24 +8,6 @@ using DwgSharpKit.Blocks;
 namespace DwgSharpKit.Rebar;
 
 /// <summary>
-/// 钢筋落地变换（<see cref="Rebar.Place"/> / <see cref="Rebar.PlaceDetail"/> 的可选几何变换）：
-/// 先绕 Pivot 缩放，再绕经过 Pivot 的 Z 轴旋转，最后平移（摆放点由调用方传入）。
-/// Pivot 默认局部原点 (0,0,0)——钢筋以 1:1 局部坐标建在原点，默认即"绕自身缩放/旋转后整体移到摆放点"。
-/// 仅作用于钢筋图形与段长标注；不改变标注文本值与 XData（长度保持 1:1 真值）；引线标注不受其影响。
-/// </summary>
-public sealed class PlaceTransform
-{
-    /// <summary>缩放比例，默认 1（不缩放）</summary>
-    public double Scale = 1;
-
-    /// <summary>旋转角（弧度，绕 Z 轴），默认 0（不旋转）</summary>
-    public double Rotation = 0;
-
-    /// <summary>缩放/旋转基准点，默认局部原点</summary>
-    public XYZ? Pivot;
-}
-
-/// <summary>
 /// 一根钢筋的完整描述：图形 + 标注。
 /// <list type="bullet">
 /// <item>钢筋图形：<see cref="Vertices"/>——一根钢筋只有一种形状，即 1:1 局部坐标多段线顶点。
@@ -105,23 +87,15 @@ public sealed class Rebar
     /// <param name="doc">CAD 文档</param>
     /// <param name="origin">摆放位置（平移向量）</param>
     /// <param name="options">绘制选项</param>
-    /// <param name="transform">几何变换（缩放/旋转/平移）；默认仅平移 origin</param>
+    /// <param name="transform">ACadSharp 几何变换；先执行该变换，再平移 origin</param>
     public void Place(
         CadDocument doc,
         XYZ origin,
         RebarDetailOptions? options = null,
-        PlaceTransform? transform = null
+        Transform? transform = null
     )
     {
-        var t = transform ?? new PlaceTransform();
-        doc.AddTransformed(
-            origin,
-            Shape(doc, options),
-            t.Scale,
-            t.Rotation,
-            t.Pivot,
-            copy => WriteXDataOnCopy(doc, copy)
-        );
+        PlaceEntities(doc, origin, Shape(doc, options), transform);
     }
 
     /// <summary>
@@ -136,26 +110,40 @@ public sealed class Rebar
     /// <param name="leaderAnchor">引线拐点/文字基准点</param>
     /// <param name="scale">引线标注整体比例，默认 50（与图纸比例一致）</param>
     /// <param name="options">绘制选项</param>
-    /// <param name="transform">钢筋几何变换（缩放/旋转/平移）；默认仅平移 origin</param>
+    /// <param name="transform">ACadSharp 几何变换；先执行该变换，再平移 origin</param>
     public void PlaceDetail(
         CadDocument doc,
         XYZ origin,
         XYZ leaderAnchor,
         double scale = 50,
         RebarDetailOptions? options = null,
-        PlaceTransform? transform = null
+        Transform? transform = null
     )
     {
-        var t = transform ?? new PlaceTransform();
-        doc.AddTransformed(
-            origin,
-            Detail(doc, options),
-            t.Scale,
-            t.Rotation,
-            t.Pivot,
-            copy => WriteXDataOnCopy(doc, copy)
-        );
+        PlaceEntities(doc, origin, Detail(doc, options), transform);
         LeaderAnnotationBlock.Add(doc, origin, leaderAnchor, Number, SpecLabel, scale);
+    }
+
+    private void PlaceEntities(
+        CadDocument doc,
+        XYZ origin,
+        IEnumerable<Entity> entities,
+        Transform? transform
+    )
+    {
+        var t = transform ?? new Transform();
+        foreach (var entity in entities)
+        {
+            entity.ApplyTransform(t);
+            entity.ApplyTranslation(origin);
+            if (entity is TextEntity text)
+            {
+                // ApplyTransform may not update AlignmentPoint for non-baseline aligned text.
+                text.AlignmentPoint = text.InsertPoint;
+            }
+            WriteXDataOnCopy(doc, entity);
+            doc.Entities.Add(entity);
+        }
     }
 
     /// <summary>把钢筋简单属性写入落地的多段线 XData（WriteXData 关闭或非多段线时跳过）</summary>

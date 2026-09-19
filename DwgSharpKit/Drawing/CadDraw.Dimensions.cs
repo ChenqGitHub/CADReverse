@@ -1,8 +1,10 @@
+using System.Threading;
 using ACadSharp;
 using ACadSharp.Entities;
 using ACadSharp.Objects;
 using ACadSharp.Tables;
 using CSMath;
+using CSMath.Extensions;
 using CSMath.Geometry;
 using DwgSharpKit.Standards;
 
@@ -10,6 +12,8 @@ namespace DwgSharpKit;
 
 public static partial class CadDraw
 {
+    private static int _dimensionBlockIndex;
+
     /// <summary>
     /// 当前 CAD 文档，用于解析默认图层、样式等。
     /// 由 CadInitializer.InitCad 初始化时设置。
@@ -184,7 +188,10 @@ public static partial class CadDraw
         var style = dim.Style;
         var sf = style.ScaleFactor;
 
-        var block = new BlockRecord($"*D{dim.Handle}") { IsAnonymous = true };
+        var block = new BlockRecord($"*D{Interlocked.Increment(ref _dimensionBlockIndex)}")
+        {
+            IsAnonymous = true,
+        };
         dim.Block = block;
 
         var transform = Transform.CreateRotation(dim.Normal, dim.Rotation);
@@ -335,7 +342,10 @@ public static partial class CadDraw
         var style = dim.Style;
         var sf = style.ScaleFactor;
 
-        var block = new BlockRecord($"*D{dim.Handle}") { IsAnonymous = true };
+        var block = new BlockRecord($"*D{Interlocked.Increment(ref _dimensionBlockIndex)}")
+        {
+            IsAnonymous = true,
+        };
         dim.Block = block;
 
         double twoPi = Math.PI * 2;
@@ -346,7 +356,8 @@ public static partial class CadDraw
             ccw = twoPi - ccw;
         }
 
-        var valid = !center.IsNaN()
+        var valid =
+            !center.IsNaN()
             && !double.IsNaN(radius)
             && radius > 1e-9
             && !double.IsNaN(startAngle)
@@ -373,11 +384,13 @@ public static partial class CadDraw
 
         if (valid)
         {
-            foreach (var (angle, lineType) in new[]
-            {
-                (startAngle, style.LineTypeExt1),
-                (endAngle, style.LineTypeExt2),
-            })
+            foreach (
+                var (angle, lineType) in new[]
+                {
+                    (startAngle, style.LineTypeExt1),
+                    (endAngle, style.LineTypeExt2),
+                }
+            )
             {
                 var radial = new XYZ(Math.Cos(angle), Math.Sin(angle), 0);
                 var tangent = new XYZ(-radial.Y, radial.X, 0);

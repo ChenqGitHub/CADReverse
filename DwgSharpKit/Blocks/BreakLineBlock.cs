@@ -3,6 +3,7 @@ using ACadSharp;
 using ACadSharp.Entities;
 using ACadSharp.Tables;
 using CSMath;
+using CSMath.Extensions;
 using DwgSharpKit.Standards;
 
 namespace DwgSharpKit.Blocks;
@@ -60,9 +61,7 @@ public static class BreakLineBlock
         pl.ApplyScaling(new XYZ(scale, scale, 1), origin);
 
         // 3. 按用户两端点距离对称移动两个端点：-d/2、+d/2
-        double d = Math.Sqrt(
-            (right.X - left.X) * (right.X - left.X) + (right.Y - left.Y) * (right.Y - left.Y)
-        );
+        double d = (right - left).GetLength();
         double half = d / 2;
         pl.Vertices[0].Location = new XY(-half, 0);
         pl.Vertices[^1].Location = new XY(half, 0);
