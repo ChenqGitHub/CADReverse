@@ -2,6 +2,7 @@ using ACadSharp;
 using ACadSharp.Entities;
 using ACadSharp.Tables;
 using CSMath;
+using DwgSharpKit.Drawing;
 using DwgSharpKit.Standards;
 
 namespace DwgSharpKit.Blocks;
@@ -31,7 +32,7 @@ public static class SectionBlock
     /// <param name="text">剖面文字，如 "Ⅲ"</param>
     /// <param name="direction">剖面方向（弧度）：0 = 水平剖切且箭头向上，-PI/2 = 竖直剖切</param>
     /// <param name="scale">整体缩放比例（左右两部分各自以本侧第一个顶点为基准缩放）</param>
-    public static void Add(
+    public static List<Entity> Add(
         CadDocument doc,
         double distance,
         string text,
@@ -50,14 +51,16 @@ public static class SectionBlock
             insertPoint.Z
         );
 
-        PlaceGroup(doc, insertPoint, -1, text, direction, scale);
-        PlaceGroup(doc, rightAnchor, +1, text, direction, scale);
+        return [
+            .. PlaceGroup(doc, insertPoint, -1, text, direction, scale),
+            .. PlaceGroup(doc, rightAnchor, +1, text, direction, scale),
+        ];
     }
 
     /// <summary>
     /// 将一侧剖面的一组图元以整组 ApplyScaling 缩放（pivot=首顶点），再平移到落点。
     /// </summary>
-    private static void PlaceGroup(
+    private static List<Entity> PlaceGroup(
         CadDocument doc,
         XYZ placePoint,
         int sign,
@@ -68,6 +71,7 @@ public static class SectionBlock
     {
         var pivot = new XYZ(0, 0, 0);
 
+        var result = new List<Entity>();
         foreach (var e in CreateGroup(doc, sign, text, direction))
         {
             if (scale != 1)
@@ -75,8 +79,9 @@ public static class SectionBlock
                 e.ApplyScaling(new XYZ(scale, scale, 1), pivot);
             }
             e.ApplyTranslation(placePoint);
-            doc.Entities.Add(e);
+            result.Add(e);
         }
+        return result;
     }
 
     /// <summary>
@@ -94,8 +99,8 @@ public static class SectionBlock
         double direction
     )
     {
-        double arrowDx = ArrowLen * Math.Sin(ArrowLean);
-        double arrowDy = ArrowLen * Math.Cos(ArrowLean);
+        var arrowDx = ArrowLen * Math.Sin(ArrowLean);
+        var arrowDy = ArrowLen * Math.Cos(ArrowLean);
 
         var b01 = doc.Layer(CadLayers.B01);
         var b07 = doc.Layer(CadLayers.B07);

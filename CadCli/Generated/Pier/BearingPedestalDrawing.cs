@@ -2,6 +2,7 @@ using ACadSharp;
 using ACadSharp.Entities;
 using DwgSharpKit;
 using DwgSharpKit.Blocks;
+using DwgSharpKit.Drawing;
 using DwgSharpKit.Rebar;
 using DwgSharpKit.Standards;
 using DwgSharpKit.Tables;
@@ -111,7 +112,9 @@ public static class BearingPedestalDrawing
             new[] { "每延米框架身HPB300钢筋合计重(kg)", "", "", "", "", "", "2211.28" },
             new[] { "每延米框架C40混凝土(m³)", "", "", "", "", "", "76.69" },
         };
-        TitleBlock.Add(doc, "框架身钢筋数量表（每延米）", "", CadDraw.P(-12000, -59500), 20);
+        doc.AddEntities(
+            TitleBlock.Add(doc, "框架身钢筋数量表（每延米）", "", CadDraw.P(-12000, -59500), 20)
+        );
         var frameRebarTable = TableHelper.CreateTable(
             doc,
             CadDraw.P(-12000, -61000),
@@ -130,17 +133,17 @@ public static class BearingPedestalDrawing
         doc.Entities.Add(frameRebarTable);
     }
 
-    public static void DrawBearingPedestalReinforcementElevation(CadDocument doc)
+    private static void DrawBearingPedestalReinforcementElevation(CadDocument doc)
     {
         var fineLine = doc.Layer(CadLayers.B04);
         var rebar = doc.Layer(CadLayers.B01);
-        var center = doc.Layer(CadLayers.B06);
+        var origin = CadDraw.P(0, 0);
 
         // 断面钢筋
         foreach (var y in new[] { -856d, -616, -376, -136 })
         {
             doc.AddTranslated(
-                new CSMath.XYZ(),
+                origin,
                 CadDraw
                     .EntityArray(
                         SteelSection.Insert(doc, CadDraw.P(300, y)),
@@ -158,7 +161,7 @@ public static class BearingPedestalDrawing
 
         // 横筋
         doc.AddTranslated(
-            new CSMath.XYZ(),
+            origin,
             CadDraw.EntityArray(
                 CadDraw.Line(CadDraw.P(548, -70), CadDraw.P(548, -856), rebar),
                 new CSMath.XYZ(0, -200, 0),
@@ -168,7 +171,7 @@ public static class BearingPedestalDrawing
 
         // 竖筋
         doc.AddTranslated(
-            new CSMath.XYZ(),
+            origin,
             CadDraw.EntityArray(
                 CadDraw.Line(CadDraw.P(1148, -70), CadDraw.P(1148, -856), rebar),
                 new CSMath.XYZ(200, 0, 0),
@@ -178,7 +181,7 @@ public static class BearingPedestalDrawing
 
         // 横筋
         doc.AddTranslated(
-            new CSMath.XYZ(),
+            origin,
             CadDraw.EntityArray(
                 CadDraw.Line(CadDraw.P(70, -328), CadDraw.P(4330, -328), rebar),
                 new CSMath.XYZ(0, -240, 0),
@@ -199,7 +202,7 @@ public static class BearingPedestalDrawing
 
         // 构造
         doc.AddTranslated(
-            new CSMath.XYZ(),
+            origin,
             [
                 CadDraw.Polyline(
                     [
@@ -216,10 +219,11 @@ public static class BearingPedestalDrawing
         );
     }
 
-    public static void DrawBearingPedestalReinforcementSide(CadDocument doc)
+    private static void DrawBearingPedestalReinforcementSide(CadDocument doc)
     {
         var rebar = doc.Layer(CadLayers.B01);
         var fineLine = doc.Layer(CadLayers.B04);
+        var origin = CadDraw.P(0, 0);
         var entities = new List<Entity>();
 
         // 断面钢筋
@@ -234,7 +238,7 @@ public static class BearingPedestalDrawing
         )
         {
             doc.AddTranslated(
-                new CSMath.XYZ(),
+                origin,
                 CadDraw
                     .EntityArray(
                         SteelSection.Insert(doc, CadDraw.P(300, y)),
@@ -252,7 +256,7 @@ public static class BearingPedestalDrawing
 
         // 竖筋
         doc.AddTranslated(
-            new CSMath.XYZ(),
+            origin,
             CadDraw.EntityArray(
                 CadDraw.Line(CadDraw.P(348, -70), CadDraw.P(348, -865.962938753888), rebar),
                 new CSMath.XYZ(200, 0, 0),
@@ -262,17 +266,13 @@ public static class BearingPedestalDrawing
 
         // 横筋
         doc.AddTranslated(
-            new CSMath.XYZ(),
+            origin,
             CadDraw.EntityArray(
                 CadDraw.Line(CadDraw.P(70, -328), CadDraw.P(1930, -328), rebar),
                 new CSMath.XYZ(0, -240, 0),
                 3
             )
         );
-
-        
-
-       
 
         // 框筋
         CadDraw.Polyline(
@@ -287,7 +287,7 @@ public static class BearingPedestalDrawing
 
         // 构造
         doc.AddTranslated(
-            new CSMath.XYZ(),
+            origin,
             [
                 CadDraw.Polyline(
                     [
@@ -306,14 +306,15 @@ public static class BearingPedestalDrawing
         );
     }
 
-    public static void DrawBearingPedestalReinforcementSection(CadDocument doc)
+    private static void DrawBearingPedestalReinforcementSection(CadDocument doc)
     {
         var rebar = doc.Layer(CadLayers.B01);
         var fineLine = doc.Layer(CadLayers.B04);
+        var origin = CadDraw.P(0, 0);
 
         // 纵筋
         doc.AddTranslated(
-            new CSMath.XYZ(),
+            origin,
             CadDraw
                 .EntityArray(
                     CadDraw.Line(CadDraw.P(300, -1930), CadDraw.P(300, -70), rebar),
@@ -330,7 +331,7 @@ public static class BearingPedestalDrawing
 
         // 横筋
         doc.AddTranslated(
-            new CSMath.XYZ(),
+            origin,
             CadDraw
                 .EntityArray(
                     CadDraw.Line(CadDraw.P(4330, -300), CadDraw.P(70, -300), rebar),
@@ -347,7 +348,7 @@ public static class BearingPedestalDrawing
 
         // 构造
         doc.AddTranslated(
-            new CSMath.XYZ(),
+            origin,
             [
                 CadDraw.Polyline(
                     [

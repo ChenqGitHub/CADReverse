@@ -2,6 +2,7 @@ using ACadSharp;
 using ACadSharp.Entities;
 using ACadSharp.Tables;
 using CSMath;
+using DwgSharpKit.Drawing;
 using DwgSharpKit.Standards;
 
 namespace DwgSharpKit.Blocks;
@@ -60,7 +61,6 @@ public static class LeaderAnnotationBlock
         // 折线首顶点（尖端）精确落到第一点
         pl.Vertices[0].Location = new XY(first.X, first.Y);
 
-        doc.AddEntities<Entity>([pl, insert]);
         return [pl, insert];
     }
 
@@ -76,7 +76,7 @@ public static class LeaderAnnotationBlock
     /// <param name="text">文字内容</param>
     /// <param name="scale">整体缩放比例，默认 1</param>
     /// <returns>引线折线多段线实体</returns>
-    public static LwPolyline Add(
+    public static List<Entity> Add(
         CadDocument doc,
         XYZ first,
         XYZ second,
@@ -108,8 +108,6 @@ public static class LeaderAnnotationBlock
         );
         var entity = CadDraw.Text(text, textPos, TextHeight * scale, doc.Layer(CadLayers.B07));
 
-        doc.Entities.Add(pl);
-        doc.Entities.Add(entity);
-        return pl;
+        return [pl, entity];
     }
 }

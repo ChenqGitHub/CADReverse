@@ -1,6 +1,7 @@
 using ACadSharp;
 using ACadSharp.Entities;
 using CSMath;
+using DwgSharpKit.Drawing;
 
 namespace DwgSharpKit;
 
@@ -12,6 +13,10 @@ namespace DwgSharpKit;
 /// 所有模板均为 1:1 局部坐标；单元格相对行基线的偏移应在模板内先行平移，
 /// Grid 不再负责单元格偏移。
 /// </summary>
+/// <remarks>
+/// 新代码请使用 <see cref="CadArrayGrid"/>。本类型保留用于兼容旧图纸代码。
+/// </remarks>
+[Obsolete("请使用 CadArrayGrid。")]
 public static class CadMesh
 {
     /// <summary>
@@ -37,27 +42,7 @@ public static class CadMesh
         XYZ origin
     )
     {
-        for (int i = 0; i < rows; i++)
-        {
-            if (rowTemplates.Count > 0)
-            {
-                doc.AddTranslated(
-                    new XYZ(origin.X, origin.Y - i * spacingRow, 0),
-                    rowTemplates
-                );
-            }
-        }
-
-        for (int j = 0; j < cols; j++)
-        {
-            if (colTemplates.Count > 0)
-            {
-                doc.AddTranslated(
-                    new XYZ(origin.X + j * spacingCol, origin.Y, 0),
-                    colTemplates
-                );
-            }
-        }
+        doc.AddEntities(CadArrayGrid.Independent(doc, rowTemplates, colTemplates, cols, rows, spacingCol, spacingRow, origin));
     }
 
     /// <summary>
@@ -83,27 +68,7 @@ public static class CadMesh
         XYZ origin
     )
     {
-        for (int i = 0; i < rows; i++)
-        {
-            if (rowTemplates.Count > 0)
-            {
-                doc.AddTranslated(
-                    new XYZ(origin.X, origin.Y - i * spacingRow, 0),
-                    rowTemplates
-                );
-            }
-
-            for (int j = 0; j < cols; j++)
-            {
-                if (cellTemplates.Count > 0)
-                {
-                    doc.AddTranslated(
-                        new XYZ(origin.X + j * spacingCol, origin.Y - i * spacingRow, 0),
-                        cellTemplates
-                    );
-                }
-            }
-        }
+        doc.AddEntities(CadArrayGrid.RowOuter(doc, rowTemplates, cellTemplates, cols, rows, spacingCol, spacingRow, origin));
     }
 
     /// <summary>
@@ -129,26 +94,6 @@ public static class CadMesh
         XYZ origin
     )
     {
-        for (int j = 0; j < cols; j++)
-        {
-            if (colTemplates.Count > 0)
-            {
-                doc.AddTranslated(
-                    new XYZ(origin.X + j * spacingCol, origin.Y, 0),
-                    colTemplates
-                );
-            }
-
-            for (int i = 0; i < rows; i++)
-            {
-                if (cellTemplates.Count > 0)
-                {
-                    doc.AddTranslated(
-                        new XYZ(origin.X + j * spacingCol, origin.Y - i * spacingRow, 0),
-                        cellTemplates
-                    );
-                }
-            }
-        }
+        doc.AddEntities(CadArrayGrid.ColumnOuter(doc, colTemplates, cellTemplates, cols, rows, spacingCol, spacingRow, origin));
     }
 }

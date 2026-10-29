@@ -71,8 +71,8 @@ public static class TableHelper
 
         ArgumentNullException.ThrowIfNull(data);
 
-        int rowCount = data.GetLength(0);
-        int columnCount = data.GetLength(1);
+        var rowCount = data.GetLength(0);
+        var columnCount = data.GetLength(1);
 
         if (rowCount == 0 || columnCount == 0)
             throw new ArgumentException("表格不能没有行或列。", nameof(data));
@@ -107,8 +107,8 @@ public static class TableHelper
 
         ArgumentNullException.ThrowIfNull(rowHeights);
 
-        int rowCount = data.GetLength(0);
-        int columnCount = data.GetLength(1);
+        var rowCount = data.GetLength(0);
+        var columnCount = data.GetLength(1);
 
         if (rowCount == 0 || columnCount == 0)
             throw new ArgumentException("表格不能没有行或列。", nameof(data));
@@ -125,7 +125,7 @@ public static class TableHelper
 
         var tableStyle = ConfigureStandardTableStyle(doc);
 
-        string blockName = $"*T{_tableIndex++}";
+        var blockName = $"*T{_tableIndex++}";
         var block = new BlockRecord(blockName) { IsAnonymous = true };
         doc.BlockRecords.Add(block);
 
@@ -141,7 +141,7 @@ public static class TableHelper
         table.CellStyleOverride.CellAlignment = TableStyle.CellAlignmentType.MiddleCenter;
         ConfigureCellStyle(table.CellStyleOverride);
 
-        for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
+        for (var columnIndex = 0; columnIndex < columnCount; columnIndex++)
         {
             table.Columns.Add(
                 new TableEntity.Column
@@ -152,11 +152,11 @@ public static class TableHelper
             );
         }
 
-        for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+        for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
         {
             var row = new TableEntity.Row { Height = rowHeights[rowIndex] };
 
-            for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
+            for (var columnIndex = 0; columnIndex < columnCount; columnIndex++)
             {
                 var cell = new TableEntity.Cell
                 {
@@ -207,8 +207,8 @@ public static class TableHelper
 
         ArgumentNullException.ThrowIfNull(columnWidths);
 
-        int rowCount = data.Count;
-        int columnCount = rowCount > 0 ? data[0].Length : 0;
+        var rowCount = data.Count;
+        var columnCount = rowCount > 0 ? data[0].Length : 0;
 
         if (rowCount == 0 || columnCount == 0)
             throw new ArgumentException("表格不能没有行或列。", nameof(data));
@@ -227,7 +227,7 @@ public static class TableHelper
 
         var rect = new string[rowCount, columnCount];
 
-        for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+        for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
         {
             var row =
                 data[rowIndex]
@@ -241,7 +241,7 @@ public static class TableHelper
                 );
             }
 
-            for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
+            for (var columnIndex = 0; columnIndex < columnCount; columnIndex++)
                 rect[rowIndex, columnIndex] = row[columnIndex];
         }
 
@@ -268,6 +268,11 @@ public static class TableHelper
 
     private static void SetTextContent(TableEntity.Cell cell, string? value, double textHeight)
     {
+        // 空串不能写成 CadValue：DWG 写出时整张表会丢失（实测 TABLE 变成 0 个实体）。
+        // 空单元格保持"无内容"，与视觉一致。
+        if (string.IsNullOrEmpty(value))
+            return;
+
         var content = new TableEntity.CellContent
         {
             ContentType = TableEntity.TableCellContentType.Value,
@@ -330,9 +335,9 @@ public static class TableHelper
             throw new InvalidOperationException("合并区域与已有合并区域重叠。");
         }
 
-        for (int rowIndex = topRowIndex; rowIndex <= bottomRowIndex; rowIndex++)
+        for (var rowIndex = topRowIndex; rowIndex <= bottomRowIndex; rowIndex++)
         {
-            for (int columnIndex = leftColumnIndex; columnIndex <= rightColumnIndex; columnIndex++)
+            for (var columnIndex = leftColumnIndex; columnIndex <= rightColumnIndex; columnIndex++)
             {
                 if (rowIndex == topRowIndex && columnIndex == leftColumnIndex)
                     continue;
@@ -505,12 +510,12 @@ public static class TableHelper
         );
 
         double columnOffset = 0;
-        for (int column = 0; column < columnIndex; column++)
+        for (var column = 0; column < columnIndex; column++)
             columnOffset += table.Columns[column].Width;
         columnOffset += table.Columns[columnIndex].Width / 2.0;
 
         double rowOffset = 0;
-        for (int row = 0; row < rowIndex; row++)
+        for (var row = 0; row < rowIndex; row++)
             rowOffset += table.Rows[row].Height;
         rowOffset += table.Rows[rowIndex].Height / 2.0;
 
@@ -526,12 +531,12 @@ public static class TableHelper
         ValidateCellCoordinates(table, rowIndex, columnIndex);
 
         double x = 0;
-        for (int column = 0; column < columnIndex; column++)
+        for (var column = 0; column < columnIndex; column++)
             x += table.Columns[column].Width;
         x += table.Columns[columnIndex].Width / 2.0;
 
         double y = 0;
-        for (int row = 0; row < rowIndex; row++)
+        for (var row = 0; row < rowIndex; row++)
             y -= table.Rows[row].Height;
         y -= table.Rows[rowIndex].Height / 2.0;
 

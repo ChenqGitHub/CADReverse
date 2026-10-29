@@ -71,7 +71,7 @@ public static class RebarXData
         }
 
         var rebar = new Rebar();
-        int i = 0;
+        var i = 0;
         foreach (var record in xdata.Records)
         {
             if (record is ExtendedDataControlString)

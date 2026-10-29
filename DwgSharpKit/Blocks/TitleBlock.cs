@@ -2,6 +2,7 @@ using ACadSharp;
 using ACadSharp.Entities;
 using ACadSharp.Tables;
 using CSMath;
+using DwgSharpKit.Drawing;
 using DwgSharpKit.Standards;
 
 namespace DwgSharpKit.Blocks;
@@ -29,7 +30,7 @@ public static class TitleBlock
     /// <param name="titleText">标题文字，如 "Ⅰ-Ⅰ"</param>
     /// <param name="scaleText">比例文字，如 "1:25"</param>
     /// <param name="scale">整体缩放比例，以插入点为基准放大/缩小</param>
-    public static void Add(
+    public static List<Entity> Add(
         CadDocument doc,
         string titleText,
         string scaleText,
@@ -39,6 +40,7 @@ public static class TitleBlock
     {
         var pivot = new XYZ(0, 0, 0);
 
+        var result = new List<Entity>();
         foreach (var e in CreateEntities(doc, titleText, scaleText))
         {
             if (scale != 1)
@@ -46,8 +48,9 @@ public static class TitleBlock
                 e.ApplyScaling(new XYZ(scale, scale, 1), pivot);
             }
             e.ApplyTranslation(insertPoint);
-            doc.Entities.Add(e);
+            result.Add(e);
         }
+        return result;
     }
 
     /// <summary>
@@ -55,14 +58,14 @@ public static class TitleBlock
     /// </summary>
     private static Entity[] CreateEntities(CadDocument doc, string titleText, string scaleText)
     {
-        double lineLength = titleText.Length * CharWidth + 2 * EndMargin;
-        double half = lineLength / 2;
+        var lineLength = titleText.Length * CharWidth + 2 * EndMargin;
+        var half = lineLength / 2;
 
         var b01 = doc.Layer(CadLayers.B01);
         var b07 = doc.Layer(CadLayers.B07);
 
-        return
-        [
+        var entities = new List<Entity>
+        {
             // 下横线（B-07 文字层）
             CadDraw.Line(CadDraw.P(-half, 0), CadDraw.P(half, 0), b07),
             // 上横线（B-01 粗实线层）
@@ -75,8 +78,15 @@ public static class TitleBlock
                 b07,
                 attachment: AttachmentPointType.BottomCenter
             ),
+        };
+
+        // 比例文字为空时不画：空的 Text 只会变成看不见的垃圾实体
+        if (!string.IsNullOrWhiteSpace(scaleText))
+        {
             // 比例文字（下横线下方、右端外侧错开 0.5，左对齐）
-            CadDraw.Text(scaleText, CadDraw.P(half + 0.5, -ScaleGap), ScaleHeight, b07),
-        ];
+            entities.Add(CadDraw.Text(scaleText, CadDraw.P(half + 0.5, -ScaleGap), ScaleHeight, b07));
+        }
+
+        return [.. entities];
     }
 }

@@ -2,6 +2,7 @@ using ACadSharp;
 using ACadSharp.Entities;
 using DwgSharpKit;
 using DwgSharpKit.Blocks;
+using DwgSharpKit.Drawing;
 using DwgSharpKit.Standards;
 
 namespace CadCli.Generated.Pier;
@@ -21,10 +22,11 @@ public static class PierCapReinforcementDrawing
         DrawCapBottomReinforcement(doc);
     }
 
-    public static void DrawCapFrontReinforcement(CadDocument doc)
+    private static void DrawCapFrontReinforcement(CadDocument doc)
     {
         var centerLayer = doc.Layer(CadLayers.B06);
         var rebarLayer = doc.Layer(CadLayers.B01);
+        var origin = CadDraw.P(0, 0);
         const double steelSectionScale = 17.0 / 3.75;
         var outlineLayer = doc.Layer(CadLayers.B01);
         var center = doc.Layer(CadLayers.B06);
@@ -33,28 +35,23 @@ public static class PierCapReinforcementDrawing
         // 按轮廓自右下向右上、再向左下的走向连接，故凸度取负值。
         var arcBulge = CadDraw.BulgeFromTangent((6100.0 - 3500.0) / 2.0 / 4500.0);
 
-        doc.AddTranslated(
-            CadDraw.P(0, 0, 0),
-            [
-                CadDraw.Polyline(
-                    [
-                        CadDraw.V(-3500 / 2, -5000, bulge: arcBulge),
-                        CadDraw.V(-6100 / 2, -500),
-                        CadDraw.V(-6100 / 2, 0),
-                        CadDraw.V(0, 0),
-                        CadDraw.V(6100 / 2, 0),
-                        CadDraw.V(6100 / 2, -500, bulge: arcBulge),
-                        CadDraw.V(3500 / 2, -5000),
-                    ],
-                    outlineLayer,
-                    closed: true
-                ),
-                CadDraw.Line(CadDraw.P(0, -500), CadDraw.P(0, 10500), center),
-            ]
-        );
-
-        void AddSteelSection(double x, double y) =>
-            doc.Entities.Add(SteelSection.Insert(doc, CadDraw.P(x, y), scale: steelSectionScale));
+        var mainEntity = new List<Entity>
+        {
+            CadDraw.Polyline(
+                [
+                    CadDraw.V(-3500 / 2, -5000, bulge: arcBulge),
+                    CadDraw.V(-6100 / 2, -500),
+                    CadDraw.V(-6100 / 2, 0),
+                    CadDraw.V(0, 0),
+                    CadDraw.V(6100 / 2, 0),
+                    CadDraw.V(6100 / 2, -500, bulge: arcBulge),
+                    CadDraw.V(3500 / 2, -5000),
+                ],
+                outlineLayer,
+                closed: true
+            ),
+            CadDraw.Line(CadDraw.P(0, -500), CadDraw.P(0, 10500), center),
+        };
 
         var rows12 = new[]
         {
@@ -172,8 +169,8 @@ public static class PierCapReinforcementDrawing
             polylines.Add(CadDraw.Line(start, end, rebarLayer));
         }
 
-        doc.Entities.AddRange(polylines);
-        doc.Entities.AddRange(
+        mainEntity.AddRange(polylines);
+        mainEntity.AddRange(
             [
                 CadDraw.Arc(
                     CadDraw.P(10116.461538, -5000),
@@ -192,37 +189,41 @@ public static class PierCapReinforcementDrawing
             ]
         );
 
-        TitleBlock.Add(doc, "顶帽正面钢筋图", "", CadDraw.P(0, 11500), 10);
+        mainEntity.AddRange(TitleBlock.Add(doc, "顶帽正面钢筋图", "", CadDraw.P(0, 11500), 10));
+        doc.AddTranslated(origin, mainEntity);
+        return;
+
+        void AddSteelSection(double x, double y) =>
+            doc.Entities.Add(SteelSection.Insert(doc, CadDraw.P(x, y), scale: steelSectionScale));
     }
 
-    public static void DrawCapSideReinforcement(CadDocument doc)
+    private static void DrawCapSideReinforcement(CadDocument doc)
     {
         var outlineLayer = doc.Layer(CadLayers.B01);
         var center = doc.Layer(CadLayers.B06);
+        var origin = CadDraw.P(0, 0);
 
         // cad-region.json 中两段圆弧的圆心角均为 0.562464 弧度。
         // 将扫描坐标的微小浮点误差归并到公共端点，形成严格闭合轮廓。
         var arcBulge = CadDraw.BulgeFromTangent((2600.0 - 2200.0) / 2.0 / 4500.0);
 
-        doc.AddTranslated(
-            CadDraw.P(0, 0, 0),
-            [
-                CadDraw.Polyline(
-                    [
-                        CadDraw.V(-2200 / 2, -5000, bulge: arcBulge),
-                        CadDraw.V(-2600 / 2, -500),
-                        CadDraw.V(-2600 / 2, 0),
-                        CadDraw.V(0, 0),
-                        CadDraw.V(2600 / 2, 0),
-                        CadDraw.V(2600 / 2, -500, bulge: arcBulge),
-                        CadDraw.V(2200 / 2, -5000),
-                    ],
-                    outlineLayer,
-                    closed: true
-                ),
-                CadDraw.Line(CadDraw.P(0, -500), CadDraw.P(0, 10500), center),
-            ]
-        );
+        var mainEntity = new List<Entity>
+        {
+            CadDraw.Polyline(
+                [
+                    CadDraw.V(-2200 / 2, -5000, bulge: arcBulge),
+                    CadDraw.V(-2600 / 2, -500),
+                    CadDraw.V(-2600 / 2, 0),
+                    CadDraw.V(0, 0),
+                    CadDraw.V(2600 / 2, 0),
+                    CadDraw.V(2600 / 2, -500, bulge: arcBulge),
+                    CadDraw.V(2200 / 2, -5000),
+                ],
+                outlineLayer,
+                closed: true
+            ),
+            CadDraw.Line(CadDraw.P(0, -500), CadDraw.P(0, 10500), center),
+        };
         var rebarLayer = doc.Layer(CadLayers.B01);
         const double steelSectionScale = 17.0 / 3.75;
 
@@ -325,8 +326,8 @@ public static class PierCapReinforcementDrawing
         paths.Add(CadDraw.Polyline([CadDraw.P2(1228, -100), CadDraw.P2(1228, -500)], rebarLayer));
         paths.Add(CadDraw.Polyline([CadDraw.P2(-1228, -100), CadDraw.P2(-1228, -500)], rebarLayer));
 
-        doc.Entities.AddRange(paths);
-        doc.Entities.AddRange(
+        mainEntity.AddRange(paths);
+        mainEntity.AddRange(
             [
                 CadDraw.Arc(
                     CadDraw.P(26340.5, -5000),
@@ -345,33 +346,31 @@ public static class PierCapReinforcementDrawing
             ]
         );
 
-        TitleBlock.Add(doc, "顶帽侧面钢筋图", "", CadDraw.P(0, 11500), 10);
+        mainEntity.AddRange(TitleBlock.Add(doc, "顶帽侧面钢筋图", "", CadDraw.P(0, 11500), 10));
+        doc.AddTranslated(origin, mainEntity);
     }
 
-    public static void DrawCapTopReinforcement(CadDocument doc)
+    private static void DrawCapTopReinforcement(CadDocument doc)
     {
         var outline = doc.Layer(CadLayers.B01);
         var center = doc.Layer(CadLayers.B06);
+        var origin = CadDraw.P(0, 0);
         var arcBulge = CadDraw.BulgeFromTangent((2600.0 - 2200.0) / 2.0 / 4500.0);
 
-        doc.AddTranslated(
-            new CSMath.XYZ(),
-            [
-                CadDraw.Polyline(
-                    [
-                        CadDraw.V(-2200 / 2, 5000, bulge: arcBulge),
-                        CadDraw.V(-2600 / 2, 9500),
-                        CadDraw.V(-2600 / 2, 10000),
-                        CadDraw.V(0, 10000),
-                        CadDraw.V(2600 / 2, 10000),
-                        CadDraw.V(2600 / 2, 9500, bulge: arcBulge),
-                    ],
-                    outline
-                ),
-            ]
-        );
-
-        var paths = new List<Line> { };
+        var mainEntity = new List<Entity>
+        {
+            CadDraw.Polyline(
+                [
+                    CadDraw.V(-2200 / 2, 5000, bulge: arcBulge),
+                    CadDraw.V(-2600 / 2, 9500),
+                    CadDraw.V(-2600 / 2, 10000),
+                    CadDraw.V(0, 10000),
+                    CadDraw.V(2600 / 2, 10000),
+                    CadDraw.V(2600 / 2, 9500, bulge: arcBulge),
+                ],
+                outline
+            ),
+        };
 
         var horizontalY = new[]
         {
@@ -389,10 +388,9 @@ public static class PierCapReinforcementDrawing
             770,
             924,
         };
-        foreach (var y in horizontalY)
-        {
-            paths.Add(CadDraw.Line(CadDraw.P(-2451.9, y), CadDraw.P(2451.9, y), outline));
-        }
+        var paths = horizontalY
+            .Select(y => CadDraw.Line(CadDraw.P(-2451.9, y), CadDraw.P(2451.9, y), outline))
+            .ToList();
 
         foreach (
             var x in new[]
@@ -423,15 +421,16 @@ public static class PierCapReinforcementDrawing
         paths.Add(CadDraw.Line(CadDraw.P(0, -1540.226), CadDraw.P(0, 1544.215), center));
         paths.Add(CadDraw.Line(CadDraw.P(-2869.813, 0), CadDraw.P(2631.533, 0), center));
 
-        doc.Entities.AddRange(paths);
-
-        TitleBlock.Add(doc, "顶帽顶面钢筋图", "", CadDraw.P(0, 11500), 10);
+        mainEntity.AddRange(paths);
+        mainEntity.AddRange(TitleBlock.Add(doc, "顶帽顶面钢筋图", "", CadDraw.P(0, 11500), 10));
+        doc.AddTranslated(origin, mainEntity);
     }
 
-    public static void DrawCapBottomReinforcement(CadDocument doc)
+    private static void DrawCapBottomReinforcement(CadDocument doc)
     {
         var outline = doc.Layer(CadLayers.B01);
         var center = doc.Layer(CadLayers.B06);
+        var origin = CadDraw.P(0, 0);
         var paths = new List<Entity>
         {
             CadDraw.Polyline(
@@ -471,9 +470,8 @@ public static class PierCapReinforcementDrawing
                 outline
             ),
         };
-
-        foreach (
-            var line in new[]
+        paths.AddRange(
+            new[]
             {
                 (468.0224725631779, 998.9966439036361, -479.99999687826494),
                 (132.00749085457937, -998.9966439036361, 480.00000312170596),
@@ -524,19 +522,18 @@ public static class PierCapReinforcementDrawing
                 (-450.02247256384726, 980.082508668449, -1034.89634263661),
                 (-150.00749085458665, 828.9426235091669, -1034.89634263661),
             }
-        )
-        {
-            paths.Add(
-                CadDraw.Line(
-                    CadDraw.P(line.Item1, line.Item2),
-                    CadDraw.P(line.Item1, line.Item3),
-                    outline
+                .Select(line =>
+                    CadDraw.Line(
+                        CadDraw.P(line.Item1, line.Item2),
+                        CadDraw.P(line.Item1, line.Item3),
+                        outline
+                    )
                 )
-            );
-        }
+                .Cast<Entity>()
+        );
 
-        foreach (
-            var y in new[]
+        paths.AddRange(
+            new[]
             {
                 -769.9999968782795d,
                 -461.9999968782795,
@@ -545,14 +542,13 @@ public static class PierCapReinforcementDrawing
                 462.00000312170596,
                 770.000003121706,
             }
-        )
-        {
-            paths.Add(CadDraw.Line(CadDraw.P(-2215.866, y), CadDraw.P(2215.866, y), outline));
-        }
+                .Select(y => CadDraw.Line(CadDraw.P(-2215.866, y), CadDraw.P(2215.866, y), outline))
+                .Cast<Entity>()
+        );
 
         paths.Add(CadDraw.Line(CadDraw.P(0, -915.357), CadDraw.P(0, 915.357), center));
-        doc.Entities.AddRange(paths);
-
-        TitleBlock.Add(doc, "顶帽底面钢筋图", "", CadDraw.P(0, 11500), 10);
+        var mainEntity = new List<Entity>(paths);
+        mainEntity.AddRange(TitleBlock.Add(doc, "顶帽底面钢筋图", "", CadDraw.P(0, 11500), 10));
+        doc.AddTranslated(origin, mainEntity);
     }
 }

@@ -1,6 +1,7 @@
 using ACadSharp.Entities;
 using ACadSharp.Tables;
 using CSMath;
+using DwgSharpKit.Drawing;
 
 namespace DwgSharpKit;
 
@@ -37,23 +38,8 @@ public static partial class CadDraw
     /// <param name="step">相邻实体的位移向量</param>
     /// <param name="count">阵列数量</param>
     /// <returns>克隆后的实体列表</returns>
-    public static List<Entity> EntityArray(Entity template, XYZ step, int count)
-    {
-        if (count < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(count), "阵列数量不能小于 0。");
-        }
-
-        var result = new List<Entity>(count);
-        for (int i = 0; i < count; i++)
-        {
-            var copy = (Entity)template.Clone();
-            copy.ApplyTranslation(new XYZ(step.X * i, step.Y * i, step.Z * i));
-            result.Add(copy);
-        }
-
-        return result;
-    }
+    public static List<Entity> EntityArray(Entity template, XYZ step, int count) =>
+        CadArray.Linear(template, step, count);
 
     /// <summary>
     /// 沿多段线按固定间距克隆实体。多段线应由直线段组成。

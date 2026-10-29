@@ -61,8 +61,8 @@ public static class BreakLineBlock
         pl.ApplyScaling(new XYZ(scale, scale, 1), origin);
 
         // 3. 按用户两端点距离对称移动两个端点：-d/2、+d/2
-        double d = (right - left).GetLength();
-        double half = d / 2;
+        var d = (right - left).GetLength();
+        var half = d / 2;
         pl.Vertices[0].Location = new XY(-half, 0);
         pl.Vertices[^1].Location = new XY(half, 0);
 
@@ -77,13 +77,12 @@ public static class BreakLineBlock
         }
 
         // 5. 按两端点方向旋转
-        double dir = Math.Atan2(right.Y - left.Y, right.X - left.X);
+        var dir = Math.Atan2(right.Y - left.Y, right.X - left.X);
         pl.ApplyRotation(XYZ.AxisZ, dir);
 
         // 6. 平移到两端点中点
         pl.ApplyTranslation(new XYZ((left.X + right.X) / 2, (left.Y + right.Y) / 2, 0));
 
-        doc.Entities.Add(pl);
         return pl;
     }
 }

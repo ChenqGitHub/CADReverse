@@ -7,6 +7,7 @@ using ACadSharp.Entities;
 using ACadSharp.Tables;
 using CSMath;
 using CSMath.Extensions;
+using DwgSharpKit.Drawing;
 using DwgSharpKit.Standards;
 
 namespace DwgSharpKit.Rebar;
@@ -37,6 +38,12 @@ public sealed class RebarDetailOptions
 
     /// <summary>标注字高</summary>
     public double TextHeight = 2.5;
+
+    /// <summary>
+    /// 段长文字是否始终保持水平（不随该段方向旋转），默认 false。
+    /// 竖段默认会沿段旋转 90°，打开后与水平段一样正放，便于与手工大样一致。
+    /// </summary>
+    public bool KeepTextHorizontal = false;
 
     /// <summary>钢筋图层，默认 B-01</summary>
     public Layer? RebarLayer;
@@ -69,7 +76,7 @@ public static class RebarDetail
 
     /// <summary>
     /// 按顶点序列构建钢筋大样图元，**返回但不写入文档**，供使用者自行添加或
-    /// 用 <see cref="DwgSharpKit.CadDocumentExtensions.AddTranslated"/> 复用。
+    /// 用 <see cref="CadDocumentExtensions.AddTranslated"/> 复用。
     /// 图元以 1:1 局部坐标在原点构建（含折线 + 每段文本标注）。
     /// 每段文本 = 起点顶点的 Text，为空用该段 1:1 长度。
     /// </summary>
@@ -95,14 +102,14 @@ public static class RebarDetail
 
         if (options.ShowText)
         {
-            for (int i = 0; i + 1 < vertices.Count; i++)
+            for (var i = 0; i + 1 < vertices.Count; i++)
             {
                 var a = new XYZ(vertices[i].Point.X, vertices[i].Point.Y, 0);
                 var b = new XYZ(vertices[i + 1].Point.X, vertices[i + 1].Point.Y, 0);
 
                 // 两点距离只是弦长；有 Bulge 时，标注应使用该段圆弧的真实长度。
-                double len = SegmentLength(a, b, vertices[i].Bulge);
-                string text = vertices[i].Text ?? FormatLength(len * vertices[i].Scale);
+                var len = SegmentLength(a, b, vertices[i].Bulge);
+                var text = vertices[i].Text ?? FormatLength(len * vertices[i].Scale);
 
                 var dir = (b - a).Normalize();
                 var normal = new XYZ(-dir.Y, dir.X, 0);
@@ -114,7 +121,7 @@ public static class RebarDetail
                         mid + normal * options.TextOffset,
                         options.TextHeight,
                         textLayer,
-                        rotation:dir.GetAngle( XYZ.AxisX),
+                        rotation:options.KeepTextHorizontal ? 0 : dir.GetAngle( XYZ.AxisX),
                         horizontalAlignment: TextHorizontalAlignment.Center,
                         verticalAlignment: TextVerticalAlignmentType.Middle
                     )
@@ -139,7 +146,7 @@ public static class RebarDetail
     internal static double PolylineLength(IReadOnlyList<RebarVertex> vertices)
     {
         double sum = 0;
-        for (int i = 0; i + 1 < vertices.Count; i++)
+        for (var i = 0; i + 1 < vertices.Count; i++)
         {
             sum += SegmentLength(vertices[i].Point, vertices[i + 1].Point, vertices[i].Bulge);
         }
@@ -147,12 +154,13 @@ public static class RebarDetail
         return sum;
     }
 
-    private static double SegmentLength(XY a, XY b, double bulge)
+    /// <summary>一段的长度：直线取弦长，带 bulge 时取圆弧真实长度。供 <see cref="Stirrup"/> 复用。</summary>
+    internal static double SegmentLength(XY a, XY b, double bulge)
     {
-        double dx = b.X - a.X;
-        double dy = b.Y - a.Y;
-        double chord = Math.Sqrt(dx * dx + dy * dy);
-        double absoluteBulge = Math.Abs(bulge);
+        var dx = b.X - a.X;
+        var dy = b.Y - a.Y;
+        var chord = Math.Sqrt(dx * dx + dy * dy);
+        var absoluteBulge = Math.Abs(bulge);
 
         if (chord == 0 || absoluteBulge < 1e-12)
         {

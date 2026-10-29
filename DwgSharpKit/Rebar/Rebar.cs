@@ -4,6 +4,7 @@ using ACadSharp;
 using ACadSharp.Entities;
 using CSMath;
 using DwgSharpKit.Blocks;
+using DwgSharpKit.Drawing;
 
 namespace DwgSharpKit.Rebar;
 
@@ -23,7 +24,7 @@ namespace DwgSharpKit.Rebar;
 /// </list>
 /// 平时画图只要图形：<see cref="Shape"/> / <see cref="Place"/>；大样（图形 + 每段标注 + 整根引线）：
 /// <see cref="Detail"/> / <see cref="PlaceDetail"/>。
-/// 图元以 1:1 局部坐标在原点构建、不自动入文档，供 <see cref="DwgSharpKit.CadDocumentExtensions.AddTranslated"/>
+/// 图元以 1:1 局部坐标在原点构建、不自动入文档，供 <see cref="CadDocumentExtensions.AddTranslated"/>
 /// 复用放置（与 SymmetricRebar/AsymmetricRebar/Stirrup 的模板风格一致）。
 /// </summary>
 public sealed class Rebar
@@ -82,21 +83,45 @@ public sealed class Rebar
     public List<Entity> Detail(CadDocument doc, RebarDetailOptions? options = null) =>
         RebarDetail.Add(doc, Vertices, options);
 
+    /// <summary>
+    /// 大样落地（无引线）：图形 + 每段单行文本标注平移到 <paramref name="origin"/>，
+    /// 并把简单属性写进多段线 XData（<see cref="WriteXData"/> 可关闭）。
+    /// 需要整根引线标注时用 <see cref="CreatePlacedDetail"/>。
+    /// </summary>
+    /// <param name="doc">CAD 文档</param>
+    /// <param name="origin">摆放位置（平移向量）</param>
+    /// <param name="options">绘制选项</param>
+    /// <param name="transform">ACadSharp 几何变换；先执行该变换，再平移 origin</param>
+    public List<Entity> Detail(
+        CadDocument doc,
+        XYZ origin,
+        RebarDetailOptions? options = null,
+        Transform? transform = null
+    ) => PlaceEntities(doc, origin, Detail(doc, options), transform);
+
     /// <summary>只画图形并落地：按 <paramref name="transform"/> 变换（默认仅平移 origin）后写入文档，
     /// 并把简单属性写进多段线 XData（<see cref="WriteXData"/> 可关闭）</summary>
     /// <param name="doc">CAD 文档</param>
     /// <param name="origin">摆放位置（平移向量）</param>
     /// <param name="options">绘制选项</param>
     /// <param name="transform">ACadSharp 几何变换；先执行该变换，再平移 origin</param>
+    public List<Entity> CreatePlaced(
+        CadDocument doc,
+        XYZ origin,
+        RebarDetailOptions? options = null,
+        Transform? transform = null
+    ) => PlaceEntities(doc, origin, Shape(doc, options), transform);
+
+    /// <summary>
+    /// 兼容旧调用：创建、变换并加入文档。新代码请使用 <see cref="CreatePlaced"/>。
+    /// </summary>
+    [Obsolete("请使用 CreatePlaced，然后显式调用 doc.AddEntities。")]
     public void Place(
         CadDocument doc,
         XYZ origin,
         RebarDetailOptions? options = null,
         Transform? transform = null
-    )
-    {
-        PlaceEntities(doc, origin, Shape(doc, options), transform);
-    }
+    ) => doc.AddEntities(CreatePlaced(doc, origin, options, transform));
 
     /// <summary>
     /// 大样落地：图形 + 每段单行文本标注按 <paramref name="transform"/> 变换
@@ -111,7 +136,7 @@ public sealed class Rebar
     /// <param name="scale">引线标注整体比例，默认 50（与图纸比例一致）</param>
     /// <param name="options">绘制选项</param>
     /// <param name="transform">ACadSharp 几何变换；先执行该变换，再平移 origin</param>
-    public void PlaceDetail(
+    public List<Entity> CreatePlacedDetail(
         CadDocument doc,
         XYZ origin,
         XYZ leaderAnchor,
@@ -120,17 +145,32 @@ public sealed class Rebar
         Transform? transform = null
     )
     {
-        PlaceEntities(doc, origin, Detail(doc, options), transform);
-        LeaderAnnotationBlock.Add(doc, origin, leaderAnchor, Number, SpecLabel, scale);
+        var result = PlaceEntities(doc, origin, Detail(doc, options), transform);
+        result.AddRange(LeaderAnnotationBlock.Add(doc, origin, leaderAnchor, Number, SpecLabel, scale));
+        return result;
     }
 
-    private void PlaceEntities(
+    /// <summary>
+    /// 兼容旧调用：创建大样并加入文档。新代码请使用 <see cref="CreatePlacedDetail"/>。
+    /// </summary>
+    [Obsolete("请使用 CreatePlacedDetail，然后显式调用 doc.AddEntities。")]
+    public void PlaceDetail(
+        CadDocument doc,
+        XYZ origin,
+        XYZ leaderAnchor,
+        double scale = 50,
+        RebarDetailOptions? options = null,
+        Transform? transform = null
+    ) => doc.AddEntities(CreatePlacedDetail(doc, origin, leaderAnchor, scale, options, transform));
+
+    private List<Entity> PlaceEntities(
         CadDocument doc,
         XYZ origin,
         IEnumerable<Entity> entities,
         Transform? transform
     )
     {
+        var result = new List<Entity>();
         var t = transform ?? new Transform();
         foreach (var entity in entities)
         {
@@ -142,8 +182,9 @@ public sealed class Rebar
                 text.AlignmentPoint = text.InsertPoint;
             }
             WriteXDataOnCopy(doc, entity);
-            doc.Entities.Add(entity);
+            result.Add(entity);
         }
+        return result;
     }
 
     /// <summary>把钢筋简单属性写入落地的多段线 XData（WriteXData 关闭或非多段线时跳过）</summary>

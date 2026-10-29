@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using ACadSharp;
 using ACadSharp.Entities;
 using CSMath;
+using DwgSharpKit.Drawing;
 
 namespace DwgSharpKit.Rebar;
 
 /// <summary>
 /// 非对称线筋：各段可直接用节点模型给定，返回 1:1 本地图元（不自动入文档），
-/// 供使用者用 <see cref="DwgSharpKit.CadDocumentExtensions.AddTranslated"/> 复用放置。
+/// 供使用者用 <see cref="CadDocumentExtensions.AddTranslated"/> 复用放置。
 /// </summary>
 public static class AsymmetricRebar
 {

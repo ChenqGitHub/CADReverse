@@ -3,6 +3,7 @@ using ACadSharp;
 using ACadSharp.Entities;
 using ACadSharp.Tables;
 using CSMath;
+using DwgSharpKit.Drawing;
 using DwgSharpKit.Standards;
 
 namespace DwgSharpKit.Blocks;

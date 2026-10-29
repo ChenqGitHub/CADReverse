@@ -4,6 +4,7 @@ using CSMath;
 using CSMath.Extensions;
 using DwgSharpKit;
 using DwgSharpKit.Blocks;
+using DwgSharpKit.Drawing;
 using DwgSharpKit.Rebar;
 using DwgSharpKit.Standards;
 using DwgSharpKit.Tables;
@@ -188,22 +189,12 @@ public static partial class GeneratedDraw
         -FrameHeight + FrameBottomSlabThickness - SideCoverThickness;
 
     /// <summary>
-    /// 一个实体的等间距阵列规格。
-    /// </summary>
-    private sealed record EntityArrayPattern(
-        Entity Template,
-        double StepX,
-        double StepY,
-        int Count
-    );
-
-    /// <summary>
     /// 框架桥钢筋图（参数化大样，N0~N17）。
     /// </summary>
     public static void DrawFrameBridgeReinforcement(CadDocument doc)
     {
         // 图题
-        TitleBlock.Add(doc, "框架桥钢筋大样图", "", CadDraw.P(0, 48000), 20);
+        doc.AddEntities(TitleBlock.Add(doc, "框架桥钢筋大样图", "", CadDraw.P(0, 48000), 20));
 
         var options = new RebarDetailOptions
         {
@@ -1198,8 +1189,8 @@ public static partial class GeneratedDraw
 
         // N18：侧墙竖向钢筋。长度和坐标由 a、H、FrameBottomSlabThickness、TopBottomCoverThickness、SideCoverThickness、α 及图示尺寸计算。
         {
-            double x = FrameSideWallThickness / Sin45 - SideCoverThickness - 25 + FilletR;
-            double y = FrameHeight / 2 - TopBottomCoverThickness;
+            var x = FrameSideWallThickness / Sin45 - SideCoverThickness - 25 + FilletR;
+            var y = FrameHeight / 2 - TopBottomCoverThickness;
 
             n18 = new Rebar
             {
@@ -1231,7 +1222,7 @@ public static partial class GeneratedDraw
 
         // N19：竖向直筋。图形坐标按框架主视图 1:10，长度按实际毫米计算。
         {
-            double y = FrameHeight / 2 - TopBottomCoverThickness;
+            var y = FrameHeight / 2 - TopBottomCoverThickness;
 
             n19 = new Rebar
             {
@@ -1252,7 +1243,7 @@ public static partial class GeneratedDraw
 
         // N20：竖向直筋。图形坐标按框架主视图 1:10，长度按实际毫米计算。
         {
-            double y = FrameHeight / 2 - TopBottomCoverThickness;
+            var y = FrameHeight / 2 - TopBottomCoverThickness;
 
             n20 = new Rebar
             {
@@ -1369,7 +1360,7 @@ public static partial class GeneratedDraw
             },
             new[] { "侧墙", "N25", "28", "102", "a/sinα-2c", "a/sinα-2c+160" },
         };
-        TitleBlock.Add(doc, "系筋尺寸表", "", CadDraw.P(-12000, -51000), 20);
+        doc.AddEntities(TitleBlock.Add(doc, "系筋尺寸表", "", CadDraw.P(-12000, -51000), 20));
         var tieTable = TableHelper.CreateTable(
             doc,
             CadDraw.P(-12000, -52000),
@@ -1396,7 +1387,7 @@ public static partial class GeneratedDraw
             new[] { "N27", "25", "31×4", "2500", "310.0", "625.0", "3.853", "2408.12" },
             new[] { "N28", "25", "21×4", "3750", "315.0", "", "", "" },
         };
-        TitleBlock.Add(doc, "全框架顶底板钝角加强钢筋数量表", "", CadDraw.P(-12000, -56500), 20);
+        doc.AddEntities(TitleBlock.Add(doc, "全框架顶底板钝角加强钢筋数量表", "", CadDraw.P(-12000, -56500), 20));
         var obtuseRebarTable = TableHelper.CreateTable(
             doc,
             CadDraw.P(-12000, -57500),
@@ -1626,7 +1617,7 @@ public static partial class GeneratedDraw
             new[] { "每延米框架身HPB300钢筋合计重(kg)", "", "", "", "", "", "2211.28" },
             new[] { "每延米框架C40混凝土(m³)", "", "", "", "", "", "76.69" },
         };
-        TitleBlock.Add(doc, "框架身钢筋数量表（每延米）", "", CadDraw.P(-12000, -59500), 20);
+        doc.AddEntities(TitleBlock.Add(doc, "框架身钢筋数量表（每延米）", "", CadDraw.P(-12000, -59500), 20));
         var frameRebarTable = TableHelper.CreateTable(
             doc,
             CadDraw.P(-12000, -61000),
@@ -1736,11 +1727,10 @@ public static partial class GeneratedDraw
         doc.AddEntities(
             [
                 CadDraw.RotatedDimension(
-                    CadDraw.P(-FrameHalfWidthOnSlope, -FrameHeight, 0),
+                    CadDraw.P(-FrameHalfWidthOnSlope, -FrameHeight),
                     CadDraw.P(
                         -(FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin,
-                        -FrameHeight,
-                        0
+                        -FrameHeight
                     ),
                     -90,
                     text: $"{FrameSideWallThickness}/sin{FrameAngle}\u00b0"
@@ -1748,13 +1738,11 @@ public static partial class GeneratedDraw
                 CadDraw.RotatedDimension(
                     CadDraw.P(
                         -(FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin,
-                        -FrameHeight,
-                        0
+                        -FrameHeight
                     ),
                     CadDraw.P(
                         (FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin,
-                        -FrameHeight,
-                        0
+                        -FrameHeight
                     ),
                     -90,
                     text: $"{FrameWidth - 2 * FrameSideWallThickness}/sin{FrameAngle}\u00b0"
@@ -1762,16 +1750,15 @@ public static partial class GeneratedDraw
                 CadDraw.RotatedDimension(
                     CadDraw.P(
                         (FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin,
-                        -FrameHeight,
-                        0
+                        -FrameHeight
                     ),
-                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight),
                     -90,
                     text: $"{FrameSideWallThickness}/sin{FrameAngle}\u00b0"
                 ),
                 CadDraw.RotatedDimension(
-                    CadDraw.P(-FrameHalfWidthOnSlope, -FrameHeight, 0),
-                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight, 0),
+                    CadDraw.P(-FrameHalfWidthOnSlope, -FrameHeight),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight),
                     -150,
                     text: $"{FrameWidth}/sin{FrameAngle}\u00b0"
                 ),
@@ -1782,23 +1769,23 @@ public static partial class GeneratedDraw
         doc.AddEntities(
             [
                 CadDraw.RotatedDimension(
-                    CadDraw.P(FrameHalfWidthOnSlope, 0, 0),
-                    CadDraw.P(FrameHalfWidthOnSlope, -FrameTopSlabThickness, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameTopSlabThickness),
                     90
                 ),
                 CadDraw.RotatedDimension(
-                    CadDraw.P(FrameHalfWidthOnSlope, -FrameTopSlabThickness, 0),
-                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight + FrameBottomSlabThickness, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameTopSlabThickness),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight + FrameBottomSlabThickness),
                     90
                 ),
                 CadDraw.RotatedDimension(
-                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight + FrameBottomSlabThickness, 0),
-                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight + FrameBottomSlabThickness),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight),
                     90
                 ),
                 CadDraw.RotatedDimension(
-                    CadDraw.P(FrameHalfWidthOnSlope, 0, 0),
-                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, 0),
+                    CadDraw.P(FrameHalfWidthOnSlope, -FrameHeight),
                     150
                 ),
             ]
@@ -1809,14 +1796,12 @@ public static partial class GeneratedDraw
                 CadDraw.RotatedDimension(
                     CadDraw.P(
                         -(FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin,
-                        -FrameTopSlabThickness,
-                        0
+                        -FrameTopSlabThickness
                     ),
                     CadDraw.P(
                         -(FrameWidth / 2 - FrameSideWallThickness - FrameTopChamferLength)
                             / FrameAngleSin,
-                        -FrameTopSlabThickness,
-                        0
+                        -FrameTopSlabThickness
                     ),
                     -90,
                     text: $"{FrameTopChamferLength}/sin{FrameAngle}\u00b0"
@@ -1825,28 +1810,24 @@ public static partial class GeneratedDraw
                     CadDraw.P(
                         -(FrameWidth / 2 - FrameSideWallThickness - FrameTopChamferLength)
                             / FrameAngleSin,
-                        -FrameTopSlabThickness,
-                        0
+                        -FrameTopSlabThickness
                     ),
                     CadDraw.P(
                         -(FrameWidth / 2 - FrameSideWallThickness - FrameTopChamferLength)
                             / FrameAngleSin,
-                        -FrameTopSlabThickness - FrameTopChamferHeight,
-                        0
+                        -FrameTopSlabThickness - FrameTopChamferHeight
                     ),
                     30
                 ),
                 CadDraw.RotatedDimension(
                     CadDraw.P(
                         (FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin,
-                        -FrameTopSlabThickness,
-                        0
+                        -FrameTopSlabThickness
                     ),
                     CadDraw.P(
                         (FrameWidth / 2 - FrameSideWallThickness - FrameTopChamferLength)
                             / FrameAngleSin,
-                        -FrameTopSlabThickness,
-                        0
+                        -FrameTopSlabThickness
                     ),
                     90,
                     text: $"{FrameTopChamferLength}/sin{FrameAngle}\u00b0"
@@ -1855,14 +1836,12 @@ public static partial class GeneratedDraw
                     CadDraw.P(
                         (FrameWidth / 2 - FrameSideWallThickness - FrameTopChamferLength)
                             / FrameAngleSin,
-                        -FrameTopSlabThickness,
-                        0
+                        -FrameTopSlabThickness
                     ),
                     CadDraw.P(
                         (FrameWidth / 2 - FrameSideWallThickness - FrameTopChamferLength)
                             / FrameAngleSin,
-                        -FrameTopSlabThickness - FrameTopChamferHeight,
-                        0
+                        -FrameTopSlabThickness - FrameTopChamferHeight
                     ),
                     -30
                 ),
@@ -1875,14 +1854,12 @@ public static partial class GeneratedDraw
                 CadDraw.RotatedDimension(
                     CadDraw.P(
                         -(FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin,
-                        -FrameHeight + FrameBottomSlabThickness + FrameBottomChamferHeight,
-                        0
+                        -FrameHeight + FrameBottomSlabThickness + FrameBottomChamferHeight
                     ),
                     CadDraw.P(
                         -(FrameWidth / 2 - FrameSideWallThickness - FrameBottomChamferLength)
                             / FrameAngleSin,
-                        -FrameHeight + FrameBottomSlabThickness + FrameBottomChamferHeight,
-                        0
+                        -FrameHeight + FrameBottomSlabThickness + FrameBottomChamferHeight
                     ),
                     90,
                     text: $"{FrameBottomChamferLength}/sin{FrameAngle}\u00b0"
@@ -1891,28 +1868,24 @@ public static partial class GeneratedDraw
                     CadDraw.P(
                         -(FrameWidth / 2 - FrameSideWallThickness - FrameBottomChamferLength)
                             / FrameAngleSin,
-                        -FrameHeight + FrameBottomSlabThickness + FrameBottomChamferHeight,
-                        0
+                        -FrameHeight + FrameBottomSlabThickness + FrameBottomChamferHeight
                     ),
                     CadDraw.P(
                         -(FrameWidth / 2 - FrameSideWallThickness - FrameBottomChamferLength)
                             / FrameAngleSin,
-                        -FrameHeight + FrameBottomSlabThickness,
-                        0
+                        -FrameHeight + FrameBottomSlabThickness
                     ),
                     30
                 ),
                 CadDraw.RotatedDimension(
                     CadDraw.P(
                         (FrameWidth / 2 - FrameSideWallThickness) / FrameAngleSin,
-                        -FrameHeight + FrameBottomSlabThickness + FrameBottomChamferHeight,
-                        0
+                        -FrameHeight + FrameBottomSlabThickness + FrameBottomChamferHeight
                     ),
                     CadDraw.P(
                         (FrameWidth / 2 - FrameSideWallThickness - FrameBottomChamferLength)
                             / FrameAngleSin,
-                        -FrameHeight + FrameBottomSlabThickness + FrameBottomChamferHeight,
-                        0
+                        -FrameHeight + FrameBottomSlabThickness + FrameBottomChamferHeight
                     ),
                     -90,
                     text: $"{FrameBottomChamferLength}/sin{FrameAngle}\u00b0"
@@ -1921,14 +1894,12 @@ public static partial class GeneratedDraw
                     CadDraw.P(
                         (FrameWidth / 2 - FrameSideWallThickness - FrameBottomChamferLength)
                             / FrameAngleSin,
-                        -FrameHeight + FrameBottomSlabThickness + FrameBottomChamferHeight,
-                        0
+                        -FrameHeight + FrameBottomSlabThickness + FrameBottomChamferHeight
                     ),
                     CadDraw.P(
                         (FrameWidth / 2 - FrameSideWallThickness - FrameBottomChamferLength)
                             / FrameAngleSin,
-                        -FrameHeight + FrameBottomSlabThickness,
-                        0
+                        -FrameHeight + FrameBottomSlabThickness
                     ),
                     -30
                 ),
@@ -1955,13 +1926,13 @@ public static partial class GeneratedDraw
         var xOffset = dx / tanFrameAngle;
         var insertPoint = new XYZ(-21500, -50000, 0);
 
-        TitleBlock.Add(
+        doc.AddEntities(TitleBlock.Add(
             doc,
             "框架顶板上部和底板下部边墙钝角加强钢筋布置示意图",
             "",
             CadDraw.P(insertPoint.X + xOffset, insertPoint.Y),
             5
-        );
+        ));
 
         // 横纵筋
 
@@ -1971,16 +1942,16 @@ public static partial class GeneratedDraw
 
         // 钢筋
         structureEntitys.AddRange(
-            CadDraw.EntityArray(
-                CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(dx, 0, 0), rebarLayer),
-                CadDraw.P(verticalSpacing / tanFrameAngle, verticalSpacing, 0),
+            CadArray.Linear(
+                CadDraw.Line(CadDraw.P(0, 0), CadDraw.P(dx, 0), rebarLayer),
+                CadDraw.P(verticalSpacing / tanFrameAngle, verticalSpacing),
                 verticalCount + 1
             )
         );
         structureEntitys.AddRange(
-            CadDraw.EntityArray(
-                CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(dy / tanFrameAngle, dy, 0), rebarLayer),
-                CadDraw.P(horizontalSpacing, 0, 0),
+            CadArray.Linear(
+                CadDraw.Line(CadDraw.P(0, 0), CadDraw.P(dy / tanFrameAngle, dy), rebarLayer),
+                CadDraw.P(horizontalSpacing, 0),
                 horizontalCount + 1
             )
         );
@@ -2007,13 +1978,13 @@ public static partial class GeneratedDraw
         doc.AddTranslated(origin, structureEntitys);
 
         var dimEntitys = new List<Entity>();
-        LeaderAnnotationBlock.Add(
+        doc.AddEntities(LeaderAnnotationBlock.Add(
             doc,
             origin.Add(new XYZ(dy, 0, 0)),
             origin.Add(new XYZ(dy + dy / 2, 0, 0)),
             "边墙",
             5
-        );
+        ));
 
         LeaderAnnotationBlock
             .Add(doc, origin.Add(new XYZ(0, 0, 0)), origin.Add(new XYZ(dx + 10, 0, 0)), "N27", "16")
@@ -2030,22 +2001,22 @@ public static partial class GeneratedDraw
             .ForEach(e => e.ApplyTranslation(new XYZ(dx / 2, 0, 0)));
 
         // 水平标注线
-        var diml2 = CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(-11, -4, 0), annotationLayer);
+        var diml2 = CadDraw.Line(CadDraw.P(0, 0), CadDraw.P(-11, -4), annotationLayer);
         diml2.ApplyTranslation(new XYZ(dy / tanFrameAngle / 2, dy / 2, 0));
 
         dimEntitys.AddRange(
-            CadDraw.EntityArray(diml2, CadDraw.P(horizontalSpacing, 0, 0), horizontalCount + 1)
+            CadArray.Linear(diml2, CadDraw.P(horizontalSpacing, 0), horizontalCount + 1)
         );
 
         // 竖直标注线
-        var diml = CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(4, -11, 0), annotationLayer);
+        var diml = CadDraw.Line(CadDraw.P(0, 0), CadDraw.P(4, -11), annotationLayer);
         diml.ApplyRotation(XYZ.AxisZ, FrameAngle);
         diml.ApplyTranslation(new XYZ(dx / 2, 0, 0));
 
         dimEntitys.AddRange(
-            CadDraw.EntityArray(
+            CadArray.Linear(
                 diml,
-                CadDraw.P(verticalSpacing / tanFrameAngle, verticalSpacing, 0),
+                CadDraw.P(verticalSpacing / tanFrameAngle, verticalSpacing),
                 verticalCount + 1
             )
         );
@@ -2081,7 +2052,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.MText(
                 "附注：\\P1、本图尺寸除钢筋直径与长度以毫米计外，余均以厘米计。\\P2、框架身按正向每米配置8排骨架钢筋，其排列顺序为① ② ③ ④ ① ② ③ ④，每排正向间距12.5cm，\\P   框架始末端需用①或③骨架。\\P3、钢筋保护层厚度为4.5cm，可适当调整始末排钢筋间距，使其净保护层为4cm。\\P4、钢筋接头采用闪光对焊，钢筋接头应避开受拉区位置,钢筋焊接长度单面焊不小于10倍钢筋直径双面焊不小于5倍钢筋直径。\\P5、钢筋弯钩采用标准弯钩，主筋弯折时，弯曲半径均为14d(d为钢筋直径)。\\P6、框架顶板顶面和底板底面钝角处均应布置钝角加强钢筋，全框架共4处。\\P7、表列钢筋数量未计搭接及损耗。\\P8、主筋骨架中，当顶底板主筋三根成束布置时，置于钢筋束内侧的弯筋，其斜段高度在相应侧减少0.87d(d为钢筋直径)。\\P9、布置钢筋时应注意各钢筋骨架的中心线，墙身轴线，顶底板轴线的相对位置。",
-                CadDraw.P(12280.10704856756, 701.6720995849337, 0),
+                CadDraw.P(12280.10704856756, 701.6720995849337),
                 30,
                 doc.Layer(CadLayers.B03),
                 attachment: AttachmentPointType.TopLeft
@@ -2096,13 +2067,13 @@ public static partial class GeneratedDraw
     private static void DrawAiMainRebarSkeletonRegion(CadDocument doc)
     {
         // AI 识别复刻：cad-region.json 中的标题块“主筋骨架示意图”。
-        TitleBlock.Add(
+        doc.AddEntities(TitleBlock.Add(
             doc,
             "主筋骨架示意图",
             "",
-            CadDraw.P(14955.19111009196, 2061.446111203868, 0),
+            CadDraw.P(14955.19111009196, 2061.446111203868),
             9
-        );
+        ));
 
         // Generated from cad-region.json: main rebar skeleton region.
         var rebarLayer = doc.Layer(CadLayers.B01);
@@ -2110,40 +2081,40 @@ public static partial class GeneratedDraw
 
         // Array from entity 43: 4 items.
         doc.AddTranslated(
-            CadDraw.P(15284.6352538, 288.031190978, 0),
-            CadDraw.EntityArray(
-                CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(-84.8, -60, 0), rebarLayer),
-                CadDraw.P(0, 470, 0),
+            CadDraw.P(15284.6352538, 288.031190978),
+            CadArray.Linear(
+                CadDraw.Line(CadDraw.P(0, 0), CadDraw.P(-84.8, -60), rebarLayer),
+                CadDraw.P(0, 470),
                 4
             )
         );
 
         // Array from entity 44: 4 items.
         doc.AddTranslated(
-            CadDraw.P(14574.6352538, 288.031190978, 0),
-            CadDraw.EntityArray(
-                CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(84.8, -60, 0), rebarLayer),
-                CadDraw.P(0, 470, 0),
+            CadDraw.P(14574.6352538, 288.031190978),
+            CadArray.Linear(
+                CadDraw.Line(CadDraw.P(0, 0), CadDraw.P(84.8, -60), rebarLayer),
+                CadDraw.P(0, 470),
                 4
             )
         );
 
         // Array from entity 47: 4 items.
         doc.AddTranslated(
-            CadDraw.P(15284.6352538, 538.031190978, 0),
-            CadDraw.EntityArray(
-                CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(-169.7333334, 40, 0), rebarLayer),
-                CadDraw.P(0, 470, 0),
+            CadDraw.P(15284.6352538, 538.031190978),
+            CadArray.Linear(
+                CadDraw.Line(CadDraw.P(0, 0), CadDraw.P(-169.7333334, 40), rebarLayer),
+                CadDraw.P(0, 470),
                 4
             )
         );
 
         // Array from entity 48: 4 items.
         doc.AddTranslated(
-            CadDraw.P(14574.6352538, 538.031190978, 0),
-            CadDraw.EntityArray(
-                CadDraw.Line(CadDraw.P(0, 0, 0), CadDraw.P(169.7333333, 40, 0), rebarLayer),
-                CadDraw.P(0, 470, 0),
+            CadDraw.P(14574.6352538, 538.031190978),
+            CadArray.Linear(
+                CadDraw.Line(CadDraw.P(0, 0), CadDraw.P(169.7333333, 40), rebarLayer),
+                CadDraw.P(0, 470),
                 4
             )
         );
@@ -2735,7 +2706,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N1",
-                CadDraw.P(15059.3129757, 1973.03119098, 0),
+                CadDraw.P(15059.3129757, 1973.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2744,7 +2715,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N22",
-                CadDraw.P(15210.1608506, 248.280631815, 0),
+                CadDraw.P(15210.1608506, 248.280631815),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2753,7 +2724,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N22",
-                CadDraw.P(14617.0352538, 268.031190978, 0),
+                CadDraw.P(14617.0352538, 268.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2762,7 +2733,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N21",
-                CadDraw.P(15187.3240242, 530.677199526, 0),
+                CadDraw.P(15187.3240242, 530.677199526),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2771,7 +2742,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N21",
-                CadDraw.P(14639.5019204, 523.031190978, 0),
+                CadDraw.P(14639.5019204, 523.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2780,7 +2751,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N20",
-                CadDraw.P(15236.6352537, 439.710981004, 0),
+                CadDraw.P(15236.6352537, 439.710981004),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -2789,7 +2760,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N20",
-                CadDraw.P(14622.6352538, 398.684698297, 0),
+                CadDraw.P(14622.6352538, 398.684698297),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -2797,22 +2768,22 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(15259.6352538, 603.031190978, 0),
-                CadDraw.P(15259.6352538, 203.031190978, 0),
+                CadDraw.P(15259.6352538, 603.031190978),
+                CadDraw.P(15259.6352538, 203.031190978),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(14599.6352538, 603.031190978, 0),
-                CadDraw.P(14599.6352538, 203.031190978, 0),
+                CadDraw.P(14599.6352538, 603.031190978),
+                CadDraw.P(14599.6352538, 203.031190978),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N19",
-                CadDraw.P(15272.6352537, 437.557748961, 0),
+                CadDraw.P(15272.6352537, 437.557748961),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -2821,7 +2792,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N19",
-                CadDraw.P(14586.6352538, 403.031190978, 0),
+                CadDraw.P(14586.6352538, 403.031190978),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -2829,22 +2800,22 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(15295.6352538, 603.031190978, 0),
-                CadDraw.P(15295.6352538, 203.031190978, 0),
+                CadDraw.P(15295.6352538, 603.031190978),
+                CadDraw.P(15295.6352538, 203.031190978),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(14563.6352538, 603.031190978, 0),
-                CadDraw.P(14563.6352538, 203.031190978, 0),
+                CadDraw.P(14563.6352538, 603.031190978),
+                CadDraw.P(14563.6352538, 203.031190978),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N19",
-                CadDraw.P(15304.1695628, 437.557748961, 0),
+                CadDraw.P(15304.1695628, 437.557748961),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -2853,7 +2824,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N19",
-                CadDraw.P(14555.5169798, 403.031190978, 0),
+                CadDraw.P(14555.5169798, 403.031190978),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -2861,22 +2832,22 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(15302.6352538, 603.031190978, 0),
-                CadDraw.P(15302.6352538, 203.031190978, 0),
+                CadDraw.P(15302.6352538, 603.031190978),
+                CadDraw.P(15302.6352538, 203.031190978),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(14556.6352538, 603.031190978, 0),
-                CadDraw.P(14556.6352538, 203.031190978, 0),
+                CadDraw.P(14556.6352538, 603.031190978),
+                CadDraw.P(14556.6352538, 203.031190978),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N18",
-                CadDraw.P(15330.6352537, 436.364524311, 0),
+                CadDraw.P(15330.6352537, 436.364524311),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -2885,7 +2856,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N18",
-                CadDraw.P(14528.6352538, 403.031190978, 0),
+                CadDraw.P(14528.6352538, 403.031190978),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -2894,7 +2865,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N10",
-                CadDraw.P(14818.5385251, 256.031190978, 0),
+                CadDraw.P(14818.5385251, 256.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2903,7 +2874,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N17",
-                CadDraw.P(14889.6352538, 210.130324037, 0),
+                CadDraw.P(14889.6352538, 210.130324037),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2912,7 +2883,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N13",
-                CadDraw.P(14949.6352538, 239.031190978, 0),
+                CadDraw.P(14949.6352538, 239.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2921,7 +2892,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N11",
-                CadDraw.P(14929.6352538, 173.555824336, 0),
+                CadDraw.P(14929.6352538, 173.555824336),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2930,7 +2901,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N10",
-                CadDraw.P(14904.6352538, 530.031190978, 0),
+                CadDraw.P(14904.6352538, 530.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2939,7 +2910,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N7",
-                CadDraw.P(14989.6352538, 570.031190978, 0),
+                CadDraw.P(14989.6352538, 570.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2948,7 +2919,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N3",
-                CadDraw.P(14889.6352538, 563.031190978, 0),
+                CadDraw.P(14889.6352538, 563.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2957,7 +2928,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N0",
-                CadDraw.P(14954.6352538, 606.031190978, 0),
+                CadDraw.P(14954.6352538, 606.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2966,7 +2937,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N22",
-                CadDraw.P(15210.1608506, 718.280631815, 0),
+                CadDraw.P(15210.1608506, 718.280631815),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2975,7 +2946,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N22",
-                CadDraw.P(14617.0352538, 738.031190978, 0),
+                CadDraw.P(14617.0352538, 738.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2984,7 +2955,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N21",
-                CadDraw.P(15187.3240242, 1000.67719953, 0),
+                CadDraw.P(15187.3240242, 1000.67719953),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -2993,7 +2964,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N21",
-                CadDraw.P(14639.5019204, 993.031190978, 0),
+                CadDraw.P(14639.5019204, 993.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3002,7 +2973,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N20",
-                CadDraw.P(15236.6352537, 909.710981004, 0),
+                CadDraw.P(15236.6352537, 909.710981004),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -3011,7 +2982,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N20",
-                CadDraw.P(14622.6352538, 873.031190978, 0),
+                CadDraw.P(14622.6352538, 873.031190978),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -3019,22 +2990,22 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(15259.6352538, 1073.03119098, 0),
-                CadDraw.P(15259.6352538, 673.031190978, 0),
+                CadDraw.P(15259.6352538, 1073.03119098),
+                CadDraw.P(15259.6352538, 673.031190978),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(14599.6352538, 1073.03119098, 0),
-                CadDraw.P(14599.6352538, 673.031190978, 0),
+                CadDraw.P(14599.6352538, 1073.03119098),
+                CadDraw.P(14599.6352538, 673.031190978),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N19",
-                CadDraw.P(15279.6352537, 907.557748961, 0),
+                CadDraw.P(15279.6352537, 907.557748961),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -3043,7 +3014,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N19",
-                CadDraw.P(14579.6352538, 873.031190978, 0),
+                CadDraw.P(14579.6352538, 873.031190978),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -3051,22 +3022,22 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(15302.6352538, 1073.03119098, 0),
-                CadDraw.P(15302.6352538, 673.031190978, 0),
+                CadDraw.P(15302.6352538, 1073.03119098),
+                CadDraw.P(15302.6352538, 673.031190978),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(14556.6352538, 1073.03119098, 0),
-                CadDraw.P(14556.6352538, 673.031190978, 0),
+                CadDraw.P(14556.6352538, 1073.03119098),
+                CadDraw.P(14556.6352538, 673.031190978),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N18",
-                CadDraw.P(15330.6352537, 906.364524311, 0),
+                CadDraw.P(15330.6352537, 906.364524311),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -3075,7 +3046,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N18",
-                CadDraw.P(14528.6352538, 873.031190978, 0),
+                CadDraw.P(14528.6352538, 873.031190978),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -3084,7 +3055,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N10",
-                CadDraw.P(14979.576586, 726.604554937, 0),
+                CadDraw.P(14979.576586, 726.604554937),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3093,7 +3064,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N15",
-                CadDraw.P(14984.6104552, 687.584233371, 0),
+                CadDraw.P(14984.6104552, 687.584233371),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3102,7 +3073,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N11",
-                CadDraw.P(14929.6352538, 676.031190978, 0),
+                CadDraw.P(14929.6352538, 676.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3111,7 +3082,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N10",
-                CadDraw.P(14954.6352538, 993.031190978, 0),
+                CadDraw.P(14954.6352538, 993.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3120,7 +3091,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N9",
-                CadDraw.P(14904.6352538, 1000.03119098, 0),
+                CadDraw.P(14904.6352538, 1000.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3129,7 +3100,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N5",
-                CadDraw.P(14889.6352538, 1033.03119098, 0),
+                CadDraw.P(14889.6352538, 1033.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3138,7 +3109,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N0",
-                CadDraw.P(14954.6352538, 1076.03119098, 0),
+                CadDraw.P(14954.6352538, 1076.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3147,7 +3118,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N22",
-                CadDraw.P(15210.1608506, 1188.28063181, 0),
+                CadDraw.P(15210.1608506, 1188.28063181),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3156,7 +3127,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N22",
-                CadDraw.P(14617.0352538, 1208.03119098, 0),
+                CadDraw.P(14617.0352538, 1208.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3165,7 +3136,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N21",
-                CadDraw.P(15187.3240242, 1470.67719953, 0),
+                CadDraw.P(15187.3240242, 1470.67719953),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3174,7 +3145,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N21",
-                CadDraw.P(14639.5019204, 1463.03119098, 0),
+                CadDraw.P(14639.5019204, 1463.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3183,7 +3154,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N20",
-                CadDraw.P(15236.6352537, 1379.710981, 0),
+                CadDraw.P(15236.6352537, 1379.710981),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -3192,7 +3163,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N20",
-                CadDraw.P(14622.6352538, 1343.03119098, 0),
+                CadDraw.P(14622.6352538, 1343.03119098),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -3200,22 +3171,22 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(15259.6352538, 1543.03119098, 0),
-                CadDraw.P(15259.6352538, 1143.03119098, 0),
+                CadDraw.P(15259.6352538, 1543.03119098),
+                CadDraw.P(15259.6352538, 1143.03119098),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(14599.6352538, 1543.03119098, 0),
-                CadDraw.P(14599.6352538, 1143.03119098, 0),
+                CadDraw.P(14599.6352538, 1543.03119098),
+                CadDraw.P(14599.6352538, 1143.03119098),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N19",
-                CadDraw.P(15265.6352537, 1377.55774896, 0),
+                CadDraw.P(15265.6352537, 1377.55774896),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -3224,7 +3195,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N19",
-                CadDraw.P(14593.6352538, 1343.03119098, 0),
+                CadDraw.P(14593.6352538, 1343.03119098),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -3232,22 +3203,22 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(15288.6352538, 1543.03119098, 0),
-                CadDraw.P(15288.6352538, 1143.03119098, 0),
+                CadDraw.P(15288.6352538, 1543.03119098),
+                CadDraw.P(15288.6352538, 1143.03119098),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(14570.6352538, 1543.03119098, 0),
-                CadDraw.P(14570.6352538, 1143.03119098, 0),
+                CadDraw.P(14570.6352538, 1543.03119098),
+                CadDraw.P(14570.6352538, 1143.03119098),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N19",
-                CadDraw.P(15299.7359254, 1376.89646285, 0),
+                CadDraw.P(15299.7359254, 1376.89646285),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -3256,7 +3227,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N19",
-                CadDraw.P(14560.6324571, 1343.03119098, 0),
+                CadDraw.P(14560.6324571, 1343.03119098),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -3264,22 +3235,22 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(15295.6352538, 1543.03119098, 0),
-                CadDraw.P(15295.6352538, 1143.03119098, 0),
+                CadDraw.P(15295.6352538, 1543.03119098),
+                CadDraw.P(15295.6352538, 1143.03119098),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(14563.6352538, 1543.03119098, 0),
-                CadDraw.P(14563.6352538, 1143.03119098, 0),
+                CadDraw.P(14563.6352538, 1543.03119098),
+                CadDraw.P(14563.6352538, 1143.03119098),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N18",
-                CadDraw.P(15330.6352537, 1376.36452431, 0),
+                CadDraw.P(15330.6352537, 1376.36452431),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -3288,7 +3259,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N18",
-                CadDraw.P(14528.6352538, 1343.03119098, 0),
+                CadDraw.P(14528.6352538, 1343.03119098),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -3297,7 +3268,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N10",
-                CadDraw.P(14954.6352538, 1196.03119098, 0),
+                CadDraw.P(14954.6352538, 1196.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3306,7 +3277,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N16",
-                CadDraw.P(14889.6352538, 1156.03119098, 0),
+                CadDraw.P(14889.6352538, 1156.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3315,7 +3286,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N12",
-                CadDraw.P(14949.6352538, 1163.03119098, 0),
+                CadDraw.P(14949.6352538, 1163.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3324,7 +3295,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N11",
-                CadDraw.P(14929.6352538, 1146.03119098, 0),
+                CadDraw.P(14929.6352538, 1146.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3333,7 +3304,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N10",
-                CadDraw.P(14904.6352538, 1470.03119098, 0),
+                CadDraw.P(14904.6352538, 1470.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3342,7 +3313,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N6",
-                CadDraw.P(14989.6352538, 1510.03119098, 0),
+                CadDraw.P(14989.6352538, 1510.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3351,7 +3322,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N2",
-                CadDraw.P(14889.6352538, 1503.03119098, 0),
+                CadDraw.P(14889.6352538, 1503.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3360,7 +3331,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N0",
-                CadDraw.P(14954.6352538, 1546.03119098, 0),
+                CadDraw.P(14954.6352538, 1546.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3369,7 +3340,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N22",
-                CadDraw.P(15210.1608506, 1658.28063181, 0),
+                CadDraw.P(15210.1608506, 1658.28063181),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3378,7 +3349,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N22",
-                CadDraw.P(14617.0352538, 1678.03119098, 0),
+                CadDraw.P(14617.0352538, 1678.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3387,7 +3358,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N21",
-                CadDraw.P(15187.3240242, 1940.67719953, 0),
+                CadDraw.P(15187.3240242, 1940.67719953),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3396,7 +3367,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N21",
-                CadDraw.P(14639.5019204, 1933.03119098, 0),
+                CadDraw.P(14639.5019204, 1933.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3405,7 +3376,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N20",
-                CadDraw.P(15236.6352537, 1849.710981, 0),
+                CadDraw.P(15236.6352537, 1849.710981),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -3414,7 +3385,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N20",
-                CadDraw.P(14622.6352538, 1813.03119098, 0),
+                CadDraw.P(14622.6352538, 1813.03119098),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -3422,22 +3393,22 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(15259.6352538, 2013.03119098, 0),
-                CadDraw.P(15259.6352538, 1613.03119098, 0),
+                CadDraw.P(15259.6352538, 2013.03119098),
+                CadDraw.P(15259.6352538, 1613.03119098),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(14599.6352538, 2013.03119098, 0),
-                CadDraw.P(14599.6352538, 1613.03119098, 0),
+                CadDraw.P(14599.6352538, 2013.03119098),
+                CadDraw.P(14599.6352538, 1613.03119098),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N19",
-                CadDraw.P(15279.6352537, 1847.55774896, 0),
+                CadDraw.P(15279.6352537, 1847.55774896),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -3446,7 +3417,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N19",
-                CadDraw.P(14579.6352538, 1813.03119098, 0),
+                CadDraw.P(14579.6352538, 1813.03119098),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -3454,22 +3425,22 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(15302.6352538, 2013.03119098, 0),
-                CadDraw.P(15302.6352538, 1613.03119098, 0),
+                CadDraw.P(15302.6352538, 2013.03119098),
+                CadDraw.P(15302.6352538, 1613.03119098),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(14556.6352538, 2013.03119098, 0),
-                CadDraw.P(14556.6352538, 1613.03119098, 0),
+                CadDraw.P(14556.6352538, 2013.03119098),
+                CadDraw.P(14556.6352538, 1613.03119098),
                 rebarLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N18",
-                CadDraw.P(15330.6352537, 1846.36452431, 0),
+                CadDraw.P(15330.6352537, 1846.36452431),
                 27,
                 annotationLayer,
                 rotation: 4.71238898038
@@ -3478,7 +3449,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N18",
-                CadDraw.P(14528.6352538, 1813.03119098, 0),
+                CadDraw.P(14528.6352538, 1813.03119098),
                 27,
                 annotationLayer,
                 rotation: 1.57079632679
@@ -3487,7 +3458,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N10",
-                CadDraw.P(14954.6352538, 1666.03119098, 0),
+                CadDraw.P(14954.6352538, 1666.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3496,7 +3467,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N14",
-                CadDraw.P(14949.6352538, 1633.03119098, 0),
+                CadDraw.P(14949.6352538, 1633.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3505,7 +3476,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N11",
-                CadDraw.P(14929.6352538, 1616.03119098, 0),
+                CadDraw.P(14929.6352538, 1616.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3514,7 +3485,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N10",
-                CadDraw.P(14954.6352538, 1933.03119098, 0),
+                CadDraw.P(14954.6352538, 1933.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3523,7 +3494,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N8",
-                CadDraw.P(14904.6352538, 1940.03119098, 0),
+                CadDraw.P(14904.6352538, 1940.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3532,7 +3503,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N4",
-                CadDraw.P(14746.4014929, 1973.03119098, 0),
+                CadDraw.P(14746.4014929, 1973.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3541,7 +3512,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N0",
-                CadDraw.P(14954.6352538, 2016.03119098, 0),
+                CadDraw.P(14954.6352538, 2016.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3550,7 +3521,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "4",
-                CadDraw.P(14923.6352538, 391.031190978, 0),
+                CadDraw.P(14923.6352538, 391.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3562,7 +3533,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "3",
-                CadDraw.P(14923.6352538, 861.031190978, 0),
+                CadDraw.P(14923.6352538, 861.031190978),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3574,7 +3545,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "2",
-                CadDraw.P(14923.6352538, 1331.03119098, 0),
+                CadDraw.P(14923.6352538, 1331.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3586,7 +3557,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "1",
-                CadDraw.P(14923.6352538, 1801.03119098, 0),
+                CadDraw.P(14923.6352538, 1801.03119098),
                 27,
                 annotationLayer,
                 rotation: 0
@@ -3609,14 +3580,14 @@ public static partial class GeneratedDraw
 
         // Detected array from entity 109: 17 items.
         doc.AddTranslated(
-            CadDraw.P(859.362023186495, -58.9139088247794, 0),
-            CadDraw.EntityArray(
+            CadDraw.P(859.362023186495, -58.9139088247794),
+            CadArray.Linear(
                 CadDraw.Line(
-                    CadDraw.P(0, 0, 0),
-                    CadDraw.P(8.13797681350843, -2.96198132727295, 0),
+                    CadDraw.P(0, 0),
+                    CadDraw.P(8.13797681350843, -2.96198132727295),
                     annotationLayer
                 ),
-                CadDraw.P(12.5, 0, 0),
+                CadDraw.P(12.5, 0),
                 17
             )
         );
@@ -4064,29 +4035,29 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1042.5, -834.591423630787, 0),
-                CadDraw.P(1034.36202318649, -837.55340495806, 0),
+                CadDraw.P(1042.5, -834.591423630787),
+                CadDraw.P(1034.36202318649, -837.55340495806),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1042.50003765005, -834.591423630718, 0),
-                CadDraw.P(1042.5, -834.591423630787, 0),
+                CadDraw.P(-1042.50003765005, -834.591423630718),
+                CadDraw.P(1042.5, -834.591423630787),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1034.36206083654, -837.553404957991, 0),
-                CadDraw.P(-1042.50003765005, -834.591423630718, 0),
+                CadDraw.P(-1034.36206083654, -837.553404957991),
+                CadDraw.P(-1042.50003765005, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1071.8620231865, -800.755125986354, 0),
-                CadDraw.P(-1080, -803.717107313627, 0),
+                CadDraw.P(-1071.8620231865, -800.755125986354),
+                CadDraw.P(-1080, -803.717107313627),
                 annotationLayer
             )
         );
@@ -4175,7 +4146,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N1",
-                CadDraw.P(-299.310688570962, -155.004029537378, 0),
+                CadDraw.P(-299.310688570962, -155.004029537378),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4185,7 +4156,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N0",
-                CadDraw.P(-356.134781751765, 22.6709745751449, 0),
+                CadDraw.P(-356.134781751765, 22.6709745751449),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4194,7 +4165,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N22",
-                CadDraw.P(-1075.16640164305, -658.591899766727, 0),
+                CadDraw.P(-1075.16640164305, -658.591899766727),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4203,7 +4174,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N21",
-                CadDraw.P(-828.26517306979, -186.878979960073, 0),
+                CadDraw.P(-828.26517306979, -186.878979960073),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4212,7 +4183,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N25",
-                CadDraw.P(1256.35021996742, -349.95914450427, 0),
+                CadDraw.P(1256.35021996742, -349.95914450427),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4220,379 +4191,379 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -732.500000000004, 0),
-                CadDraw.P(1159.76411935342, -740.637976813516, 0),
+                CadDraw.P(1162.72610068068, -732.500000000004),
+                CadDraw.P(1159.76411935342, -740.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -720.000000000004, 0),
-                CadDraw.P(1159.76411935342, -728.137976813516, 0),
+                CadDraw.P(1162.72610068068, -720.000000000004),
+                CadDraw.P(1159.76411935342, -728.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -707.500000000004, 0),
-                CadDraw.P(1159.76411935342, -715.637976813516, 0),
+                CadDraw.P(1162.72610068068, -707.500000000004),
+                CadDraw.P(1159.76411935342, -715.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -695.000000000004, 0),
-                CadDraw.P(1159.76411935342, -703.137976813516, 0),
+                CadDraw.P(1162.72610068068, -695.000000000004),
+                CadDraw.P(1159.76411935342, -703.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -682.500000000004, 0),
-                CadDraw.P(1159.76411935342, -690.637976813516, 0),
+                CadDraw.P(1162.72610068068, -682.500000000004),
+                CadDraw.P(1159.76411935342, -690.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -670.000000000004, 0),
-                CadDraw.P(1159.76411935342, -678.137976813516, 0),
+                CadDraw.P(1162.72610068068, -670.000000000004),
+                CadDraw.P(1159.76411935342, -678.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -657.500000000004, 0),
-                CadDraw.P(1159.76411935342, -665.637976813516, 0),
+                CadDraw.P(1162.72610068068, -657.500000000004),
+                CadDraw.P(1159.76411935342, -665.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -645.000000000004, 0),
-                CadDraw.P(1159.76411935342, -653.137976813516, 0),
+                CadDraw.P(1162.72610068068, -645.000000000004),
+                CadDraw.P(1159.76411935342, -653.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -632.500000000004, 0),
-                CadDraw.P(1159.76411935342, -640.637976813516, 0),
+                CadDraw.P(1162.72610068068, -632.500000000004),
+                CadDraw.P(1159.76411935342, -640.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -620.000000000004, 0),
-                CadDraw.P(1159.76411935342, -628.137976813516, 0),
+                CadDraw.P(1162.72610068068, -620.000000000004),
+                CadDraw.P(1159.76411935342, -628.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -607.500000000004, 0),
-                CadDraw.P(1159.76411935342, -615.637976813516, 0),
+                CadDraw.P(1162.72610068068, -607.500000000004),
+                CadDraw.P(1159.76411935342, -615.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -595.000000000004, 0),
-                CadDraw.P(1159.76411935342, -603.137976813516, 0),
+                CadDraw.P(1162.72610068068, -595.000000000004),
+                CadDraw.P(1159.76411935342, -603.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -582.500000000004, 0),
-                CadDraw.P(1159.76411935342, -590.637976813516, 0),
+                CadDraw.P(1162.72610068068, -582.500000000004),
+                CadDraw.P(1159.76411935342, -590.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -570.000000000004, 0),
-                CadDraw.P(1159.76411935342, -578.137976813516, 0),
+                CadDraw.P(1162.72610068068, -570.000000000004),
+                CadDraw.P(1159.76411935342, -578.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -557.500000000004, 0),
-                CadDraw.P(1159.76411935342, -565.637976813516, 0),
+                CadDraw.P(1162.72610068068, -557.500000000004),
+                CadDraw.P(1159.76411935342, -565.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -545.000000000004, 0),
-                CadDraw.P(1159.76411935342, -553.137976813516, 0),
+                CadDraw.P(1162.72610068068, -545.000000000004),
+                CadDraw.P(1159.76411935342, -553.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -532.500000000004, 0),
-                CadDraw.P(1159.76411935342, -540.637976813516, 0),
+                CadDraw.P(1162.72610068068, -532.500000000004),
+                CadDraw.P(1159.76411935342, -540.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -520.000000000004, 0),
-                CadDraw.P(1159.76411935342, -528.137976813516, 0),
+                CadDraw.P(1162.72610068068, -520.000000000004),
+                CadDraw.P(1159.76411935342, -528.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -507.500000000004, 0),
-                CadDraw.P(1159.76411935342, -515.637976813516, 0),
+                CadDraw.P(1162.72610068068, -507.500000000004),
+                CadDraw.P(1159.76411935342, -515.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -495.000000000004, 0),
-                CadDraw.P(1159.76411935342, -503.137976813516, 0),
+                CadDraw.P(1162.72610068068, -495.000000000004),
+                CadDraw.P(1159.76411935342, -503.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -482.500000000004, 0),
-                CadDraw.P(1159.76411935342, -490.637976813516, 0),
+                CadDraw.P(1162.72610068068, -482.500000000004),
+                CadDraw.P(1159.76411935342, -490.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -470.000000000004, 0),
-                CadDraw.P(1159.76411935342, -478.137976813516, 0),
+                CadDraw.P(1162.72610068068, -470.000000000004),
+                CadDraw.P(1159.76411935342, -478.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -457.500000000004, 0),
-                CadDraw.P(1159.76411935342, -465.637976813516, 0),
+                CadDraw.P(1162.72610068068, -457.500000000004),
+                CadDraw.P(1159.76411935342, -465.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -445.000000000004, 0),
-                CadDraw.P(1159.76411935342, -453.137976813516, 0),
+                CadDraw.P(1162.72610068068, -445.000000000004),
+                CadDraw.P(1159.76411935342, -453.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -432.500000000004, 0),
-                CadDraw.P(1159.76411935342, -440.637976813516, 0),
+                CadDraw.P(1162.72610068068, -432.500000000004),
+                CadDraw.P(1159.76411935342, -440.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -420.000000000004, 0),
-                CadDraw.P(1159.76411935342, -428.137976813516, 0),
+                CadDraw.P(1162.72610068068, -420.000000000004),
+                CadDraw.P(1159.76411935342, -428.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -407.500000000004, 0),
-                CadDraw.P(1159.76411935342, -415.637976813516, 0),
+                CadDraw.P(1162.72610068068, -407.500000000004),
+                CadDraw.P(1159.76411935342, -415.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -395.000000000004, 0),
-                CadDraw.P(1159.76411935342, -403.137976813516, 0),
+                CadDraw.P(1162.72610068068, -395.000000000004),
+                CadDraw.P(1159.76411935342, -403.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -382.500000000004, 0),
-                CadDraw.P(1159.76411935342, -390.637976813516, 0),
+                CadDraw.P(1162.72610068068, -382.500000000004),
+                CadDraw.P(1159.76411935342, -390.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -370.000000000004, 0),
-                CadDraw.P(1159.76411935342, -378.137976813516, 0),
+                CadDraw.P(1162.72610068068, -370.000000000004),
+                CadDraw.P(1159.76411935342, -378.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -357.500000000004, 0),
-                CadDraw.P(1159.76411935342, -365.637976813516, 0),
+                CadDraw.P(1162.72610068068, -357.500000000004),
+                CadDraw.P(1159.76411935342, -365.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -345.000000000004, 0),
-                CadDraw.P(1159.76411935342, -353.137976813516, 0),
+                CadDraw.P(1162.72610068068, -345.000000000004),
+                CadDraw.P(1159.76411935342, -353.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -332.500000000004, 0),
-                CadDraw.P(1159.76411935342, -340.637976813516, 0),
+                CadDraw.P(1162.72610068068, -332.500000000004),
+                CadDraw.P(1159.76411935342, -340.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -320.000000000004, 0),
-                CadDraw.P(1159.76411935342, -328.137976813516, 0),
+                CadDraw.P(1162.72610068068, -320.000000000004),
+                CadDraw.P(1159.76411935342, -328.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -307.500000000004, 0),
-                CadDraw.P(1159.76411935342, -315.637976813516, 0),
+                CadDraw.P(1162.72610068068, -307.500000000004),
+                CadDraw.P(1159.76411935342, -315.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -295.000000000004, 0),
-                CadDraw.P(1159.76411935342, -303.137976813516, 0),
+                CadDraw.P(1162.72610068068, -295.000000000004),
+                CadDraw.P(1159.76411935342, -303.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -282.500000000004, 0),
-                CadDraw.P(1159.76411935342, -290.637976813516, 0),
+                CadDraw.P(1162.72610068068, -282.500000000004),
+                CadDraw.P(1159.76411935342, -290.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -270.000000000004, 0),
-                CadDraw.P(1159.76411935342, -278.137976813516, 0),
+                CadDraw.P(1162.72610068068, -270.000000000004),
+                CadDraw.P(1159.76411935342, -278.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -257.500000000004, 0),
-                CadDraw.P(1159.76411935342, -265.637976813516, 0),
+                CadDraw.P(1162.72610068068, -257.500000000004),
+                CadDraw.P(1159.76411935342, -265.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -245.000000000004, 0),
-                CadDraw.P(1159.76411935342, -253.137976813516, 0),
+                CadDraw.P(1162.72610068068, -245.000000000004),
+                CadDraw.P(1159.76411935342, -253.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -232.500000000004, 0),
-                CadDraw.P(1159.76411935342, -240.637976813516, 0),
+                CadDraw.P(1162.72610068068, -232.500000000004),
+                CadDraw.P(1159.76411935342, -240.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -220.000000000004, 0),
-                CadDraw.P(1159.76411935342, -228.137976813516, 0),
+                CadDraw.P(1162.72610068068, -220.000000000004),
+                CadDraw.P(1159.76411935342, -228.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -207.500000000004, 0),
-                CadDraw.P(1159.76411935342, -215.637976813516, 0),
+                CadDraw.P(1162.72610068068, -207.500000000004),
+                CadDraw.P(1159.76411935342, -215.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -195.000000000004, 0),
-                CadDraw.P(1159.76411935342, -203.137976813516, 0),
+                CadDraw.P(1162.72610068068, -195.000000000004),
+                CadDraw.P(1159.76411935342, -203.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -182.500000000004, 0),
-                CadDraw.P(1159.76411935342, -190.637976813516, 0),
+                CadDraw.P(1162.72610068068, -182.500000000004),
+                CadDraw.P(1159.76411935342, -190.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -170.000000000004, 0),
-                CadDraw.P(1159.76411935342, -178.137976813516, 0),
+                CadDraw.P(1162.72610068068, -170.000000000004),
+                CadDraw.P(1159.76411935342, -178.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -157.500000000004, 0),
-                CadDraw.P(1159.76411935342, -165.637976813516, 0),
+                CadDraw.P(1162.72610068068, -157.500000000004),
+                CadDraw.P(1159.76411935342, -165.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -145.000000000004, 0),
-                CadDraw.P(1159.76411935342, -153.137976813516, 0),
+                CadDraw.P(1162.72610068068, -145.000000000004),
+                CadDraw.P(1159.76411935342, -153.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -132.500000000004, 0),
-                CadDraw.P(1159.76411935342, -140.637976813516, 0),
+                CadDraw.P(1162.72610068068, -132.500000000004),
+                CadDraw.P(1159.76411935342, -140.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068068, -120.000000000004, 0),
-                CadDraw.P(1159.76411935342, -128.137976813516, 0),
+                CadDraw.P(1162.72610068068, -120.000000000004),
+                CadDraw.P(1159.76411935342, -128.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1162.72610068069, -352.202208439754, 0),
-                CadDraw.P(1297.23382075689, -352.202208439754, 0),
+                CadDraw.P(1162.72610068069, -352.202208439754),
+                CadDraw.P(1297.23382075689, -352.202208439754),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1055, -803.717107313627, 0),
-                CadDraw.P(-1046.8620231865, -800.755125986354, 0),
+                CadDraw.P(-1055, -803.717107313627),
+                CadDraw.P(-1046.8620231865, -800.755125986354),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1067.5, -803.717107313627, 0),
-                CadDraw.P(-1059.3620231865, -800.755125986354, 0),
+                CadDraw.P(-1067.5, -803.717107313627),
+                CadDraw.P(-1059.3620231865, -800.755125986354),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N24-1\uff5e3",
-                CadDraw.P(-977.592266408802, -900.505414637877, 0),
+                CadDraw.P(-977.592266408802, -900.505414637877),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4600,22 +4571,22 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1021.86206083654, -837.553404957991, 0),
-                CadDraw.P(-1030.00003765005, -834.591423630718, 0),
+                CadDraw.P(-1021.86206083654, -837.553404957991),
+                CadDraw.P(-1030.00003765005, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1009.36206083654, -837.553404957991, 0),
-                CadDraw.P(-1017.50003765005, -834.591423630718, 0),
+                CadDraw.P(-1009.36206083654, -837.553404957991),
+                CadDraw.P(-1017.50003765005, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N23-1\uff5e18",
-                CadDraw.P(715.927708886731, 20.2034209846114, 0),
+                CadDraw.P(715.927708886731, 20.2034209846114),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4623,43 +4594,43 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-834.36221852151, -38.3704865801046, 0),
-                CadDraw.P(-842.500195335018, -35.4085052528317, 0),
+                CadDraw.P(-834.36221852151, -38.3704865801046),
+                CadDraw.P(-842.500195335018, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-821.86221852151, -38.3704865801046, 0),
-                CadDraw.P(-830.000195335018, -35.4085052528317, 0),
+                CadDraw.P(-821.86221852151, -38.3704865801046),
+                CadDraw.P(-830.000195335018, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-809.36221852151, -38.3704865801046, 0),
-                CadDraw.P(-817.500195335018, -35.4085052528317, 0),
+                CadDraw.P(-809.36221852151, -38.3704865801046),
+                CadDraw.P(-817.500195335018, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1017.5, -834.591423630787, 0),
-                CadDraw.P(1009.36202318649, -837.55340495806, 0),
+                CadDraw.P(1017.5, -834.591423630787),
+                CadDraw.P(1009.36202318649, -837.55340495806),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1030, -834.591423630787, 0),
-                CadDraw.P(1021.86202318649, -837.55340495806, 0),
+                CadDraw.P(1030, -834.591423630787),
+                CadDraw.P(1021.86202318649, -837.55340495806),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N22",
-                CadDraw.P(1049.14841877403, -661.240649057831, 0),
+                CadDraw.P(1049.14841877403, -661.240649057831),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4668,7 +4639,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N21",
-                CadDraw.P(1028.33676211058, -236.260468371716, 0),
+                CadDraw.P(1028.33676211058, -236.260468371716),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4678,7 +4649,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N18/N19",
-                CadDraw.P(-1384.29591316246, -274.146835848826, 0),
+                CadDraw.P(-1384.29591316246, -274.146835848826),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4687,7 +4658,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N20",
-                CadDraw.P(-1079.6472988926, -275.063202447409, 0),
+                CadDraw.P(-1079.6472988926, -275.063202447409),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4696,7 +4667,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N8/N9/N10",
-                CadDraw.P(-243.757894081936, -155.004029537378, 0),
+                CadDraw.P(-243.757894081936, -155.004029537378),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4706,7 +4677,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N21",
-                CadDraw.P(-767.234999613744, -213.790160156246, 0),
+                CadDraw.P(-767.234999613744, -213.790160156246),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4715,7 +4686,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N22",
-                CadDraw.P(-921.742187615541, -706.681957027302, 0),
+                CadDraw.P(-921.742187615541, -706.681957027302),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4724,7 +4695,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N26",
-                CadDraw.P(29.4069807810751, -134.466612074766, 0),
+                CadDraw.P(29.4069807810751, -134.466612074766),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4733,7 +4704,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N26",
-                CadDraw.P(-64.5015753756657, -721.237565312544, 0),
+                CadDraw.P(-64.5015753756657, -721.237565312544),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4741,22 +4712,22 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1055, -803.717107313627, 0),
-                CadDraw.P(1046.86202318649, -806.6790886409, 0),
+                CadDraw.P(1055, -803.717107313627),
+                CadDraw.P(1046.86202318649, -806.6790886409),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(1067.5, -803.717107313627, 0),
-                CadDraw.P(1059.36202318649, -806.6790886409, 0),
+                CadDraw.P(1067.5, -803.717107313627),
+                CadDraw.P(1059.36202318649, -806.6790886409),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N24-1\uff5e3",
-                CadDraw.P(845.001612446141, -720.970199568581, 0),
+                CadDraw.P(845.001612446141, -720.970199568581),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -4764,463 +4735,463 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-796.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-805.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-796.862060836538, -38.3704865801046),
+                CadDraw.P(-805.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-784.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-792.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-784.362060836538, -38.3704865801046),
+                CadDraw.P(-792.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-771.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-780.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-771.862060836538, -38.3704865801046),
+                CadDraw.P(-780.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-759.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-767.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-759.362060836538, -38.3704865801046),
+                CadDraw.P(-767.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-746.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-755.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-746.862060836538, -38.3704865801046),
+                CadDraw.P(-755.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-734.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-742.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-734.362060836538, -38.3704865801046),
+                CadDraw.P(-742.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-721.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-730.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-721.862060836538, -38.3704865801046),
+                CadDraw.P(-730.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-709.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-717.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-709.362060836538, -38.3704865801046),
+                CadDraw.P(-717.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-696.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-705.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-696.862060836538, -38.3704865801046),
+                CadDraw.P(-705.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-684.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-692.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-684.362060836538, -38.3704865801046),
+                CadDraw.P(-692.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-671.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-680.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-671.862060836538, -38.3704865801046),
+                CadDraw.P(-680.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-659.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-667.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-659.362060836538, -38.3704865801046),
+                CadDraw.P(-667.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-646.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-655.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-646.862060836538, -38.3704865801046),
+                CadDraw.P(-655.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-634.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-642.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-634.362060836538, -38.3704865801046),
+                CadDraw.P(-642.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-621.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-630.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-621.862060836538, -38.3704865801046),
+                CadDraw.P(-630.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-609.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-617.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-609.362060836538, -38.3704865801046),
+                CadDraw.P(-617.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-596.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-605.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-596.862060836538, -38.3704865801046),
+                CadDraw.P(-605.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-584.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-592.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-584.362060836538, -38.3704865801046),
+                CadDraw.P(-592.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-571.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-580.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-571.862060836538, -38.3704865801046),
+                CadDraw.P(-580.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-559.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-567.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-559.362060836538, -38.3704865801046),
+                CadDraw.P(-567.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-546.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-555.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-546.862060836538, -38.3704865801046),
+                CadDraw.P(-555.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-534.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-542.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-534.362060836538, -38.3704865801046),
+                CadDraw.P(-542.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-521.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-530.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-521.862060836538, -38.3704865801046),
+                CadDraw.P(-530.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-509.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-517.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-509.362060836538, -38.3704865801046),
+                CadDraw.P(-517.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-496.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-505.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-496.862060836538, -38.3704865801046),
+                CadDraw.P(-505.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-484.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-492.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-484.362060836538, -38.3704865801046),
+                CadDraw.P(-492.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-471.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-480.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-471.862060836538, -38.3704865801046),
+                CadDraw.P(-480.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-459.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-467.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-459.362060836538, -38.3704865801046),
+                CadDraw.P(-467.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-446.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-455.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-446.862060836538, -38.3704865801046),
+                CadDraw.P(-455.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-434.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-442.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-434.362060836538, -38.3704865801046),
+                CadDraw.P(-442.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-421.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-430.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-421.862060836538, -38.3704865801046),
+                CadDraw.P(-430.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-409.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-417.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-409.362060836538, -38.3704865801046),
+                CadDraw.P(-417.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-396.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-405.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-396.862060836538, -38.3704865801046),
+                CadDraw.P(-405.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-384.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-392.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-384.362060836538, -38.3704865801046),
+                CadDraw.P(-392.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-371.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-380.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-371.862060836538, -38.3704865801046),
+                CadDraw.P(-380.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-359.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-367.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-359.362060836538, -38.3704865801046),
+                CadDraw.P(-367.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-346.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-355.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-346.862060836538, -38.3704865801046),
+                CadDraw.P(-355.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-334.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-342.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-334.362060836538, -38.3704865801046),
+                CadDraw.P(-342.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-321.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-330.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-321.862060836538, -38.3704865801046),
+                CadDraw.P(-330.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-309.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-317.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-309.362060836538, -38.3704865801046),
+                CadDraw.P(-317.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-296.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-305.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-296.862060836538, -38.3704865801046),
+                CadDraw.P(-305.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-284.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-292.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-284.362060836538, -38.3704865801046),
+                CadDraw.P(-292.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-271.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-280.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-271.862060836538, -38.3704865801046),
+                CadDraw.P(-280.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-259.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-267.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-259.362060836538, -38.3704865801046),
+                CadDraw.P(-267.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-246.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-255.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-246.862060836538, -38.3704865801046),
+                CadDraw.P(-255.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-234.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-242.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-234.362060836538, -38.3704865801046),
+                CadDraw.P(-242.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-221.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-230.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-221.862060836538, -38.3704865801046),
+                CadDraw.P(-230.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-209.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-217.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-209.362060836538, -38.3704865801046),
+                CadDraw.P(-217.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-196.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-205.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-196.862060836538, -38.3704865801046),
+                CadDraw.P(-205.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-184.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-192.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-184.362060836538, -38.3704865801046),
+                CadDraw.P(-192.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-171.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-180.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-171.862060836538, -38.3704865801046),
+                CadDraw.P(-180.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-159.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-167.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-159.362060836538, -38.3704865801046),
+                CadDraw.P(-167.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-146.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-155.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-146.862060836538, -38.3704865801046),
+                CadDraw.P(-155.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-134.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-142.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-134.362060836538, -38.3704865801046),
+                CadDraw.P(-142.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-121.862060836538, -38.3704865801046, 0),
-                CadDraw.P(-130.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-121.862060836538, -38.3704865801046),
+                CadDraw.P(-130.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-109.362060836538, -38.3704865801046, 0),
-                CadDraw.P(-117.500037650047, -35.4085052528317, 0),
+                CadDraw.P(-109.362060836538, -38.3704865801046),
+                CadDraw.P(-117.500037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-96.8620608365381, -38.3704865801046, 0),
-                CadDraw.P(-105.000037650047, -35.4085052528317, 0),
+                CadDraw.P(-96.8620608365381, -38.3704865801046),
+                CadDraw.P(-105.000037650047, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-84.3620608365381, -38.3704865801046, 0),
-                CadDraw.P(-92.5000376500466, -35.4085052528317, 0),
+                CadDraw.P(-84.3620608365381, -38.3704865801046),
+                CadDraw.P(-92.5000376500466, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-71.8620608365381, -38.3704865801046, 0),
-                CadDraw.P(-80.0000376500466, -35.4085052528317, 0),
+                CadDraw.P(-71.8620608365381, -38.3704865801046),
+                CadDraw.P(-80.0000376500466, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-59.3620608365381, -38.3704865801046, 0),
-                CadDraw.P(-67.5000376500466, -35.4085052528317, 0),
+                CadDraw.P(-59.3620608365381, -38.3704865801046),
+                CadDraw.P(-67.5000376500466, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-46.8620608365381, -38.3704865801046, 0),
-                CadDraw.P(-55.0000376500466, -35.4085052528317, 0),
+                CadDraw.P(-46.8620608365381, -38.3704865801046),
+                CadDraw.P(-55.0000376500466, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-34.3620608365381, -38.3704865801046, 0),
-                CadDraw.P(-42.5000376500466, -35.4085052528317, 0),
+                CadDraw.P(-34.3620608365381, -38.3704865801046),
+                CadDraw.P(-42.5000376500466, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-21.8620608365381, -38.3704865801046, 0),
-                CadDraw.P(-30.0000376500466, -35.4085052528317, 0),
+                CadDraw.P(-21.8620608365381, -38.3704865801046),
+                CadDraw.P(-30.0000376500466, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-9.36206083653815, -38.3704865801046, 0),
-                CadDraw.P(-17.5000376500466, -35.4085052528317, 0),
+                CadDraw.P(-9.36206083653815, -38.3704865801046),
+                CadDraw.P(-17.5000376500466, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(3.13793916346185, -38.3704865801046, 0),
-                CadDraw.P(-5.00003765004658, -35.4085052528317, 0),
+                CadDraw.P(3.13793916346185, -38.3704865801046),
+                CadDraw.P(-5.00003765004658, -35.4085052528317),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N23",
-                CadDraw.P(161.313007445116, -158.365987168805, 0),
+                CadDraw.P(161.313007445116, -158.365987168805),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -5229,7 +5200,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N25",
-                CadDraw.P(-1079.49334930404, -349.900497041958, 0),
+                CadDraw.P(-1079.49334930404, -349.900497041958),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -5237,932 +5208,932 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -732.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -740.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -732.500000000004),
+                CadDraw.P(-1178.83588064658, -740.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -720.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -728.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -720.000000000004),
+                CadDraw.P(-1178.83588064658, -728.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -707.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -715.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -707.500000000004),
+                CadDraw.P(-1178.83588064658, -715.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -695.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -703.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -695.000000000004),
+                CadDraw.P(-1178.83588064658, -703.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -682.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -690.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -682.500000000004),
+                CadDraw.P(-1178.83588064658, -690.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -670.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -678.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -670.000000000004),
+                CadDraw.P(-1178.83588064658, -678.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -657.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -665.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -657.500000000004),
+                CadDraw.P(-1178.83588064658, -665.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -645.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -653.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -645.000000000004),
+                CadDraw.P(-1178.83588064658, -653.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -632.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -640.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -632.500000000004),
+                CadDraw.P(-1178.83588064658, -640.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -620.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -628.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -620.000000000004),
+                CadDraw.P(-1178.83588064658, -628.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -607.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -615.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -607.500000000004),
+                CadDraw.P(-1178.83588064658, -615.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -595.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -603.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -595.000000000004),
+                CadDraw.P(-1178.83588064658, -603.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -582.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -590.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -582.500000000004),
+                CadDraw.P(-1178.83588064658, -590.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -570.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -578.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -570.000000000004),
+                CadDraw.P(-1178.83588064658, -578.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -557.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -565.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -557.500000000004),
+                CadDraw.P(-1178.83588064658, -565.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -545.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -553.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -545.000000000004),
+                CadDraw.P(-1178.83588064658, -553.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -532.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -540.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -532.500000000004),
+                CadDraw.P(-1178.83588064658, -540.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -520.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -528.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -520.000000000004),
+                CadDraw.P(-1178.83588064658, -528.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -507.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -515.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -507.500000000004),
+                CadDraw.P(-1178.83588064658, -515.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -495.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -503.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -495.000000000004),
+                CadDraw.P(-1178.83588064658, -503.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -482.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -490.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -482.500000000004),
+                CadDraw.P(-1178.83588064658, -490.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -470.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -478.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -470.000000000004),
+                CadDraw.P(-1178.83588064658, -478.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -457.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -465.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -457.500000000004),
+                CadDraw.P(-1178.83588064658, -465.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -445.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -453.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -445.000000000004),
+                CadDraw.P(-1178.83588064658, -453.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -432.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -440.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -432.500000000004),
+                CadDraw.P(-1178.83588064658, -440.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -420.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -428.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -420.000000000004),
+                CadDraw.P(-1178.83588064658, -428.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -407.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -415.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -407.500000000004),
+                CadDraw.P(-1178.83588064658, -415.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -395.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -403.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -395.000000000004),
+                CadDraw.P(-1178.83588064658, -403.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -382.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -390.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -382.500000000004),
+                CadDraw.P(-1178.83588064658, -390.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -370.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -378.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -370.000000000004),
+                CadDraw.P(-1178.83588064658, -378.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -357.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -365.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -357.500000000004),
+                CadDraw.P(-1178.83588064658, -365.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -345.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -353.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -345.000000000004),
+                CadDraw.P(-1178.83588064658, -353.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -332.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -340.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -332.500000000004),
+                CadDraw.P(-1178.83588064658, -340.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -320.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -328.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -320.000000000004),
+                CadDraw.P(-1178.83588064658, -328.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -307.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -315.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -307.500000000004),
+                CadDraw.P(-1178.83588064658, -315.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -295.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -303.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -295.000000000004),
+                CadDraw.P(-1178.83588064658, -303.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -282.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -290.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -282.500000000004),
+                CadDraw.P(-1178.83588064658, -290.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -270.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -278.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -270.000000000004),
+                CadDraw.P(-1178.83588064658, -278.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -257.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -265.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -257.500000000004),
+                CadDraw.P(-1178.83588064658, -265.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -245.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -253.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -245.000000000004),
+                CadDraw.P(-1178.83588064658, -253.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -232.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -240.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -232.500000000004),
+                CadDraw.P(-1178.83588064658, -240.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -220.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -228.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -220.000000000004),
+                CadDraw.P(-1178.83588064658, -228.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -207.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -215.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -207.500000000004),
+                CadDraw.P(-1178.83588064658, -215.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -195.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -203.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -195.000000000004),
+                CadDraw.P(-1178.83588064658, -203.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -182.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -190.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -182.500000000004),
+                CadDraw.P(-1178.83588064658, -190.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -170.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -178.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -170.000000000004),
+                CadDraw.P(-1178.83588064658, -178.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -157.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -165.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -157.500000000004),
+                CadDraw.P(-1178.83588064658, -165.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -145.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -153.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -145.000000000004),
+                CadDraw.P(-1178.83588064658, -153.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -132.500000000004, 0),
-                CadDraw.P(-1178.83588064658, -140.637976813516, 0),
+                CadDraw.P(-1175.87389931931, -132.500000000004),
+                CadDraw.P(-1178.83588064658, -140.637976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -120.000000000004, 0),
-                CadDraw.P(-1178.83588064658, -128.137976813516, 0),
+                CadDraw.P(-1175.87389931931, -120.000000000004),
+                CadDraw.P(-1178.83588064658, -128.137976813516),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1175.87389931931, -352.202208439754, 0),
-                CadDraw.P(-1041.36617924311, -352.202208439754, 0),
+                CadDraw.P(-1175.87389931931, -352.202208439754),
+                CadDraw.P(-1041.36617924311, -352.202208439754),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-996.862060836538, -837.553404957991, 0),
-                CadDraw.P(-1005.00003765005, -834.591423630718, 0),
+                CadDraw.P(-996.862060836538, -837.553404957991),
+                CadDraw.P(-1005.00003765005, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-984.362060836538, -837.553404957991, 0),
-                CadDraw.P(-992.500037650047, -834.591423630718, 0),
+                CadDraw.P(-984.362060836538, -837.553404957991),
+                CadDraw.P(-992.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-971.862060836538, -837.553404957991, 0),
-                CadDraw.P(-980.000037650047, -834.591423630718, 0),
+                CadDraw.P(-971.862060836538, -837.553404957991),
+                CadDraw.P(-980.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-959.362060836538, -837.553404957991, 0),
-                CadDraw.P(-967.500037650047, -834.591423630718, 0),
+                CadDraw.P(-959.362060836538, -837.553404957991),
+                CadDraw.P(-967.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-946.862060836538, -837.553404957991, 0),
-                CadDraw.P(-955.000037650047, -834.591423630718, 0),
+                CadDraw.P(-946.862060836538, -837.553404957991),
+                CadDraw.P(-955.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-934.362060836538, -837.553404957991, 0),
-                CadDraw.P(-942.500037650047, -834.591423630718, 0),
+                CadDraw.P(-934.362060836538, -837.553404957991),
+                CadDraw.P(-942.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-921.862060836538, -837.553404957991, 0),
-                CadDraw.P(-930.000037650047, -834.591423630718, 0),
+                CadDraw.P(-921.862060836538, -837.553404957991),
+                CadDraw.P(-930.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-909.362060836538, -837.553404957991, 0),
-                CadDraw.P(-917.500037650047, -834.591423630718, 0),
+                CadDraw.P(-909.362060836538, -837.553404957991),
+                CadDraw.P(-917.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-896.862060836538, -837.553404957991, 0),
-                CadDraw.P(-905.000037650047, -834.591423630718, 0),
+                CadDraw.P(-896.862060836538, -837.553404957991),
+                CadDraw.P(-905.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-884.362060836538, -837.553404957991, 0),
-                CadDraw.P(-892.500037650047, -834.591423630718, 0),
+                CadDraw.P(-884.362060836538, -837.553404957991),
+                CadDraw.P(-892.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-871.862060836538, -837.553404957991, 0),
-                CadDraw.P(-880.000037650047, -834.591423630718, 0),
+                CadDraw.P(-871.862060836538, -837.553404957991),
+                CadDraw.P(-880.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-859.362060836538, -837.553404957991, 0),
-                CadDraw.P(-867.500037650047, -834.591423630718, 0),
+                CadDraw.P(-859.362060836538, -837.553404957991),
+                CadDraw.P(-867.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-846.862060836538, -837.553404957991, 0),
-                CadDraw.P(-855.000037650047, -834.591423630718, 0),
+                CadDraw.P(-846.862060836538, -837.553404957991),
+                CadDraw.P(-855.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-834.362060836538, -837.553404957991, 0),
-                CadDraw.P(-842.500037650047, -834.591423630718, 0),
+                CadDraw.P(-834.362060836538, -837.553404957991),
+                CadDraw.P(-842.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-821.862060836538, -837.553404957991, 0),
-                CadDraw.P(-830.000037650047, -834.591423630718, 0),
+                CadDraw.P(-821.862060836538, -837.553404957991),
+                CadDraw.P(-830.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-809.362060836538, -837.553404957991, 0),
-                CadDraw.P(-817.500037650047, -834.591423630718, 0),
+                CadDraw.P(-809.362060836538, -837.553404957991),
+                CadDraw.P(-817.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-796.862060836538, -837.553404957991, 0),
-                CadDraw.P(-805.000037650047, -834.591423630718, 0),
+                CadDraw.P(-796.862060836538, -837.553404957991),
+                CadDraw.P(-805.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-784.362060836538, -837.553404957991, 0),
-                CadDraw.P(-792.500037650047, -834.591423630718, 0),
+                CadDraw.P(-784.362060836538, -837.553404957991),
+                CadDraw.P(-792.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-771.862060836538, -837.553404957991, 0),
-                CadDraw.P(-780.000037650047, -834.591423630718, 0),
+                CadDraw.P(-771.862060836538, -837.553404957991),
+                CadDraw.P(-780.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-759.362060836538, -837.553404957991, 0),
-                CadDraw.P(-767.500037650047, -834.591423630718, 0),
+                CadDraw.P(-759.362060836538, -837.553404957991),
+                CadDraw.P(-767.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-746.862060836538, -837.553404957991, 0),
-                CadDraw.P(-755.000037650047, -834.591423630718, 0),
+                CadDraw.P(-746.862060836538, -837.553404957991),
+                CadDraw.P(-755.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-734.362060836538, -837.553404957991, 0),
-                CadDraw.P(-742.500037650047, -834.591423630718, 0),
+                CadDraw.P(-734.362060836538, -837.553404957991),
+                CadDraw.P(-742.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-721.862060836538, -837.553404957991, 0),
-                CadDraw.P(-730.000037650047, -834.591423630718, 0),
+                CadDraw.P(-721.862060836538, -837.553404957991),
+                CadDraw.P(-730.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-709.362060836538, -837.553404957991, 0),
-                CadDraw.P(-717.500037650047, -834.591423630718, 0),
+                CadDraw.P(-709.362060836538, -837.553404957991),
+                CadDraw.P(-717.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-696.862060836538, -837.553404957991, 0),
-                CadDraw.P(-705.000037650047, -834.591423630718, 0),
+                CadDraw.P(-696.862060836538, -837.553404957991),
+                CadDraw.P(-705.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-684.362060836538, -837.553404957991, 0),
-                CadDraw.P(-692.500037650047, -834.591423630718, 0),
+                CadDraw.P(-684.362060836538, -837.553404957991),
+                CadDraw.P(-692.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-671.862060836538, -837.553404957991, 0),
-                CadDraw.P(-680.000037650047, -834.591423630718, 0),
+                CadDraw.P(-671.862060836538, -837.553404957991),
+                CadDraw.P(-680.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-659.362060836538, -837.553404957991, 0),
-                CadDraw.P(-667.500037650047, -834.591423630718, 0),
+                CadDraw.P(-659.362060836538, -837.553404957991),
+                CadDraw.P(-667.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-646.862060836538, -837.553404957991, 0),
-                CadDraw.P(-655.000037650047, -834.591423630718, 0),
+                CadDraw.P(-646.862060836538, -837.553404957991),
+                CadDraw.P(-655.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-634.362060836538, -837.553404957991, 0),
-                CadDraw.P(-642.500037650047, -834.591423630718, 0),
+                CadDraw.P(-634.362060836538, -837.553404957991),
+                CadDraw.P(-642.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-621.862060836538, -837.553404957991, 0),
-                CadDraw.P(-630.000037650047, -834.591423630718, 0),
+                CadDraw.P(-621.862060836538, -837.553404957991),
+                CadDraw.P(-630.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-609.362060836538, -837.553404957991, 0),
-                CadDraw.P(-617.500037650047, -834.591423630718, 0),
+                CadDraw.P(-609.362060836538, -837.553404957991),
+                CadDraw.P(-617.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-596.862060836538, -837.553404957991, 0),
-                CadDraw.P(-605.000037650047, -834.591423630718, 0),
+                CadDraw.P(-596.862060836538, -837.553404957991),
+                CadDraw.P(-605.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-584.362060836538, -837.553404957991, 0),
-                CadDraw.P(-592.500037650047, -834.591423630718, 0),
+                CadDraw.P(-584.362060836538, -837.553404957991),
+                CadDraw.P(-592.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-571.862060836538, -837.553404957991, 0),
-                CadDraw.P(-580.000037650047, -834.591423630718, 0),
+                CadDraw.P(-571.862060836538, -837.553404957991),
+                CadDraw.P(-580.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-559.362060836538, -837.553404957991, 0),
-                CadDraw.P(-567.500037650047, -834.591423630718, 0),
+                CadDraw.P(-559.362060836538, -837.553404957991),
+                CadDraw.P(-567.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-546.862060836538, -837.553404957991, 0),
-                CadDraw.P(-555.000037650047, -834.591423630718, 0),
+                CadDraw.P(-546.862060836538, -837.553404957991),
+                CadDraw.P(-555.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-534.362060836538, -837.553404957991, 0),
-                CadDraw.P(-542.500037650047, -834.591423630718, 0),
+                CadDraw.P(-534.362060836538, -837.553404957991),
+                CadDraw.P(-542.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-521.862060836538, -837.553404957991, 0),
-                CadDraw.P(-530.000037650047, -834.591423630718, 0),
+                CadDraw.P(-521.862060836538, -837.553404957991),
+                CadDraw.P(-530.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-509.362060836538, -837.553404957991, 0),
-                CadDraw.P(-517.500037650047, -834.591423630718, 0),
+                CadDraw.P(-509.362060836538, -837.553404957991),
+                CadDraw.P(-517.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-496.862060836538, -837.553404957991, 0),
-                CadDraw.P(-505.000037650047, -834.591423630718, 0),
+                CadDraw.P(-496.862060836538, -837.553404957991),
+                CadDraw.P(-505.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-484.362060836538, -837.553404957991, 0),
-                CadDraw.P(-492.500037650047, -834.591423630718, 0),
+                CadDraw.P(-484.362060836538, -837.553404957991),
+                CadDraw.P(-492.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-471.862060836538, -837.553404957991, 0),
-                CadDraw.P(-480.000037650047, -834.591423630718, 0),
+                CadDraw.P(-471.862060836538, -837.553404957991),
+                CadDraw.P(-480.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-459.362060836538, -837.553404957991, 0),
-                CadDraw.P(-467.500037650047, -834.591423630718, 0),
+                CadDraw.P(-459.362060836538, -837.553404957991),
+                CadDraw.P(-467.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-446.862060836538, -837.553404957991, 0),
-                CadDraw.P(-455.000037650047, -834.591423630718, 0),
+                CadDraw.P(-446.862060836538, -837.553404957991),
+                CadDraw.P(-455.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-434.362060836538, -837.553404957991, 0),
-                CadDraw.P(-442.500037650047, -834.591423630718, 0),
+                CadDraw.P(-434.362060836538, -837.553404957991),
+                CadDraw.P(-442.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-421.862060836538, -837.553404957991, 0),
-                CadDraw.P(-430.000037650047, -834.591423630718, 0),
+                CadDraw.P(-421.862060836538, -837.553404957991),
+                CadDraw.P(-430.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-409.362060836538, -837.553404957991, 0),
-                CadDraw.P(-417.500037650047, -834.591423630718, 0),
+                CadDraw.P(-409.362060836538, -837.553404957991),
+                CadDraw.P(-417.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-396.862060836538, -837.553404957991, 0),
-                CadDraw.P(-405.000037650047, -834.591423630718, 0),
+                CadDraw.P(-396.862060836538, -837.553404957991),
+                CadDraw.P(-405.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-384.362060836538, -837.553404957991, 0),
-                CadDraw.P(-392.500037650047, -834.591423630718, 0),
+                CadDraw.P(-384.362060836538, -837.553404957991),
+                CadDraw.P(-392.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-371.862060836538, -837.553404957991, 0),
-                CadDraw.P(-380.000037650047, -834.591423630718, 0),
+                CadDraw.P(-371.862060836538, -837.553404957991),
+                CadDraw.P(-380.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-359.362060836538, -837.553404957991, 0),
-                CadDraw.P(-367.500037650047, -834.591423630718, 0),
+                CadDraw.P(-359.362060836538, -837.553404957991),
+                CadDraw.P(-367.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-346.862060836538, -837.553404957991, 0),
-                CadDraw.P(-355.000037650047, -834.591423630718, 0),
+                CadDraw.P(-346.862060836538, -837.553404957991),
+                CadDraw.P(-355.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-334.362060836538, -837.553404957991, 0),
-                CadDraw.P(-342.500037650047, -834.591423630718, 0),
+                CadDraw.P(-334.362060836538, -837.553404957991),
+                CadDraw.P(-342.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-321.862060836538, -837.553404957991, 0),
-                CadDraw.P(-330.000037650047, -834.591423630718, 0),
+                CadDraw.P(-321.862060836538, -837.553404957991),
+                CadDraw.P(-330.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-309.362060836538, -837.553404957991, 0),
-                CadDraw.P(-317.500037650047, -834.591423630718, 0),
+                CadDraw.P(-309.362060836538, -837.553404957991),
+                CadDraw.P(-317.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-296.862060836538, -837.553404957991, 0),
-                CadDraw.P(-305.000037650047, -834.591423630718, 0),
+                CadDraw.P(-296.862060836538, -837.553404957991),
+                CadDraw.P(-305.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-284.362060836538, -837.553404957991, 0),
-                CadDraw.P(-292.500037650047, -834.591423630718, 0),
+                CadDraw.P(-284.362060836538, -837.553404957991),
+                CadDraw.P(-292.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-271.862060836538, -837.553404957991, 0),
-                CadDraw.P(-280.000037650047, -834.591423630718, 0),
+                CadDraw.P(-271.862060836538, -837.553404957991),
+                CadDraw.P(-280.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-259.362060836538, -837.553404957991, 0),
-                CadDraw.P(-267.500037650047, -834.591423630718, 0),
+                CadDraw.P(-259.362060836538, -837.553404957991),
+                CadDraw.P(-267.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-246.862060836538, -837.553404957991, 0),
-                CadDraw.P(-255.000037650047, -834.591423630718, 0),
+                CadDraw.P(-246.862060836538, -837.553404957991),
+                CadDraw.P(-255.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-234.362060836538, -837.553404957991, 0),
-                CadDraw.P(-242.500037650047, -834.591423630718, 0),
+                CadDraw.P(-234.362060836538, -837.553404957991),
+                CadDraw.P(-242.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-221.862060836538, -837.553404957991, 0),
-                CadDraw.P(-230.000037650047, -834.591423630718, 0),
+                CadDraw.P(-221.862060836538, -837.553404957991),
+                CadDraw.P(-230.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-209.362060836538, -837.553404957991, 0),
-                CadDraw.P(-217.500037650047, -834.591423630718, 0),
+                CadDraw.P(-209.362060836538, -837.553404957991),
+                CadDraw.P(-217.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-196.862060836538, -837.553404957991, 0),
-                CadDraw.P(-205.000037650047, -834.591423630718, 0),
+                CadDraw.P(-196.862060836538, -837.553404957991),
+                CadDraw.P(-205.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-184.362060836538, -837.553404957991, 0),
-                CadDraw.P(-192.500037650047, -834.591423630718, 0),
+                CadDraw.P(-184.362060836538, -837.553404957991),
+                CadDraw.P(-192.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-171.862060836538, -837.553404957991, 0),
-                CadDraw.P(-180.000037650047, -834.591423630718, 0),
+                CadDraw.P(-171.862060836538, -837.553404957991),
+                CadDraw.P(-180.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-159.362060836538, -837.553404957991, 0),
-                CadDraw.P(-167.500037650047, -834.591423630718, 0),
+                CadDraw.P(-159.362060836538, -837.553404957991),
+                CadDraw.P(-167.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-146.862060836538, -837.553404957991, 0),
-                CadDraw.P(-155.000037650047, -834.591423630718, 0),
+                CadDraw.P(-146.862060836538, -837.553404957991),
+                CadDraw.P(-155.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-134.362060836538, -837.553404957991, 0),
-                CadDraw.P(-142.500037650047, -834.591423630718, 0),
+                CadDraw.P(-134.362060836538, -837.553404957991),
+                CadDraw.P(-142.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-121.862060836538, -837.553404957991, 0),
-                CadDraw.P(-130.000037650047, -834.591423630718, 0),
+                CadDraw.P(-121.862060836538, -837.553404957991),
+                CadDraw.P(-130.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-109.362060836538, -837.553404957991, 0),
-                CadDraw.P(-117.500037650047, -834.591423630718, 0),
+                CadDraw.P(-109.362060836538, -837.553404957991),
+                CadDraw.P(-117.500037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-96.8620608365381, -837.553404957991, 0),
-                CadDraw.P(-105.000037650047, -834.591423630718, 0),
+                CadDraw.P(-96.8620608365381, -837.553404957991),
+                CadDraw.P(-105.000037650047, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-84.3620608365381, -837.553404957991, 0),
-                CadDraw.P(-92.5000376500466, -834.591423630718, 0),
+                CadDraw.P(-84.3620608365381, -837.553404957991),
+                CadDraw.P(-92.5000376500466, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-71.8620608365381, -837.553404957991, 0),
-                CadDraw.P(-80.0000376500466, -834.591423630718, 0),
+                CadDraw.P(-71.8620608365381, -837.553404957991),
+                CadDraw.P(-80.0000376500466, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-59.3620608365381, -837.553404957991, 0),
-                CadDraw.P(-67.5000376500466, -834.591423630718, 0),
+                CadDraw.P(-59.3620608365381, -837.553404957991),
+                CadDraw.P(-67.5000376500466, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-46.8620608365381, -837.553404957991, 0),
-                CadDraw.P(-55.0000376500466, -834.591423630718, 0),
+                CadDraw.P(-46.8620608365381, -837.553404957991),
+                CadDraw.P(-55.0000376500466, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-34.3620608365381, -837.553404957991, 0),
-                CadDraw.P(-42.5000376500466, -834.591423630718, 0),
+                CadDraw.P(-34.3620608365381, -837.553404957991),
+                CadDraw.P(-42.5000376500466, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-21.8620608365381, -837.553404957991, 0),
-                CadDraw.P(-30.0000376500466, -834.591423630718, 0),
+                CadDraw.P(-21.8620608365381, -837.553404957991),
+                CadDraw.P(-30.0000376500466, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-9.36206083653815, -837.553404957991, 0),
-                CadDraw.P(-17.5000376500466, -834.591423630718, 0),
+                CadDraw.P(-9.36206083653815, -837.553404957991),
+                CadDraw.P(-17.5000376500466, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(3.13793916346185, -837.553404957991, 0),
-                CadDraw.P(-5.00003765004658, -834.591423630718, 0),
+                CadDraw.P(3.13793916346185, -837.553404957991),
+                CadDraw.P(-5.00003765004658, -834.591423630718),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N24",
-                CadDraw.P(161.313007445116, -703.820462642145, 0),
+                CadDraw.P(161.313007445116, -703.820462642145),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6171,7 +6142,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N10",
-                CadDraw.P(-353.001373534461, -703.820462642145, 0),
+                CadDraw.P(-353.001373534461, -703.820462642145),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6180,15 +6151,15 @@ public static partial class GeneratedDraw
 
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-417.751317079266, -920.397975034226, 0),
-                CadDraw.P(-464.746626839802, -920.397975034226, 0),
+                CadDraw.P(-417.751317079266, -920.397975034226),
+                CadDraw.P(-464.746626839802, -920.397975034226),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Text(
                 "N11",
-                CadDraw.P(-454.128652769998, -916.181627228312, 0),
+                CadDraw.P(-454.128652769998, -916.181627228312),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6197,7 +6168,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N12",
-                CadDraw.P(-523.581389713111, -705.692420465073, 0),
+                CadDraw.P(-523.581389713111, -705.692420465073),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6206,7 +6177,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N13",
-                CadDraw.P(-603.552162212278, -705.702160876697, 0),
+                CadDraw.P(-603.552162212278, -705.702160876697),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6215,7 +6186,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N14",
-                CadDraw.P(-673.581389713063, -705.692420465073, 0),
+                CadDraw.P(-673.581389713063, -705.692420465073),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6224,7 +6195,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N15",
-                CadDraw.P(-731.892860883489, -705.692420465073, 0),
+                CadDraw.P(-731.892860883489, -705.692420465073),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6233,7 +6204,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N16",
-                CadDraw.P(-781.863633382617, -706.232961005613, 0),
+                CadDraw.P(-781.863633382617, -706.232961005613),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6242,7 +6213,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N17",
-                CadDraw.P(-828.528604257494, -706.681957027302, 0),
+                CadDraw.P(-828.528604257494, -706.681957027302),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6251,7 +6222,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N2",
-                CadDraw.P(-355.829123876816, -155.004029537378, 0),
+                CadDraw.P(-355.829123876816, -155.004029537378),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6260,7 +6231,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N3",
-                CadDraw.P(-495.829123876816, -155.004029537378, 0),
+                CadDraw.P(-495.829123876816, -155.004029537378),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6269,7 +6240,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N4",
-                CadDraw.P(-575.829123876816, -155.004029537378, 0),
+                CadDraw.P(-575.829123876816, -155.004029537378),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6278,7 +6249,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N5",
-                CadDraw.P(-635.829123876816, -155.004029537378, 0),
+                CadDraw.P(-635.829123876816, -155.004029537378),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6287,7 +6258,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N6",
-                CadDraw.P(-685.829123876812, -155.004029537378, 0),
+                CadDraw.P(-685.829123876812, -155.004029537378),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6296,7 +6267,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N23-1\uff5e18",
-                CadDraw.P(-835.729494800973, 20.2034209846114, 0),
+                CadDraw.P(-835.729494800973, 20.2034209846114),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6305,7 +6276,7 @@ public static partial class GeneratedDraw
         doc.Entities.Add(
             CadDraw.Text(
                 "N7",
-                CadDraw.P(-735.829123876816, -155.004029537378, 0),
+                CadDraw.P(-735.829123876816, -155.004029537378),
                 25,
                 annotationLayer,
                 rotation: 0
@@ -6313,113 +6284,113 @@ public static partial class GeneratedDraw
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-871.862023186492, -58.9139088247794, 0),
-                CadDraw.P(-880, -61.8758901520523, 0),
+                CadDraw.P(-871.862023186492, -58.9139088247794),
+                CadDraw.P(-880, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-884.362023186492, -58.9139088247794, 0),
-                CadDraw.P(-892.5, -61.8758901520523, 0),
+                CadDraw.P(-884.362023186492, -58.9139088247794),
+                CadDraw.P(-892.5, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-896.862023186492, -58.9139088247794, 0),
-                CadDraw.P(-905, -61.8758901520523, 0),
+                CadDraw.P(-896.862023186492, -58.9139088247794),
+                CadDraw.P(-905, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-909.362023186492, -58.9139088247794, 0),
-                CadDraw.P(-917.5, -61.8758901520523, 0),
+                CadDraw.P(-909.362023186492, -58.9139088247794),
+                CadDraw.P(-917.5, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-921.862023186492, -58.9139088247794, 0),
-                CadDraw.P(-930, -61.8758901520523, 0),
+                CadDraw.P(-921.862023186492, -58.9139088247794),
+                CadDraw.P(-930, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-934.362023186492, -58.9139088247794, 0),
-                CadDraw.P(-942.5, -61.8758901520523, 0),
+                CadDraw.P(-934.362023186492, -58.9139088247794),
+                CadDraw.P(-942.5, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-946.862023186492, -58.9139088247794, 0),
-                CadDraw.P(-955, -61.8758901520523, 0),
+                CadDraw.P(-946.862023186492, -58.9139088247794),
+                CadDraw.P(-955, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-959.362023186492, -58.9139088247794, 0),
-                CadDraw.P(-967.5, -61.8758901520523, 0),
+                CadDraw.P(-959.362023186492, -58.9139088247794),
+                CadDraw.P(-967.5, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-971.862023186492, -58.9139088247794, 0),
-                CadDraw.P(-980, -61.8758901520523, 0),
+                CadDraw.P(-971.862023186492, -58.9139088247794),
+                CadDraw.P(-980, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-984.362023186492, -58.9139088247794, 0),
-                CadDraw.P(-992.5, -61.8758901520523, 0),
+                CadDraw.P(-984.362023186492, -58.9139088247794),
+                CadDraw.P(-992.5, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-996.862023186492, -58.9139088247794, 0),
-                CadDraw.P(-1005, -61.8758901520523, 0),
+                CadDraw.P(-996.862023186492, -58.9139088247794),
+                CadDraw.P(-1005, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1009.36202318649, -58.9139088247794, 0),
-                CadDraw.P(-1017.5, -61.8758901520523, 0),
+                CadDraw.P(-1009.36202318649, -58.9139088247794),
+                CadDraw.P(-1017.5, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1021.86202318649, -58.9139088247794, 0),
-                CadDraw.P(-1030, -61.8758901520523, 0),
+                CadDraw.P(-1021.86202318649, -58.9139088247794),
+                CadDraw.P(-1030, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1034.36202318649, -58.9139088247794, 0),
-                CadDraw.P(-1042.5, -61.8758901520523, 0),
+                CadDraw.P(-1034.36202318649, -58.9139088247794),
+                CadDraw.P(-1042.5, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1046.86202318649, -58.9139088247794, 0),
-                CadDraw.P(-1055, -61.8758901520523, 0),
+                CadDraw.P(-1046.86202318649, -58.9139088247794),
+                CadDraw.P(-1055, -61.8758901520523),
                 annotationLayer
             )
         );
         doc.Entities.Add(
             CadDraw.Line(
-                CadDraw.P(-1059.36202318649, -58.9139088247794, 0),
-                CadDraw.P(-1067.5, -61.8758901520523, 0),
+                CadDraw.P(-1059.36202318649, -58.9139088247794),
+                CadDraw.P(-1067.5, -61.8758901520523),
                 annotationLayer
             )
         );
@@ -6687,36 +6658,15 @@ public static partial class GeneratedDraw
         CadDocument doc,
         double x,
         double y,
-        EntityArrayPattern pattern,
+        CadArrayPattern pattern,
         double horizontalAxisY,
         bool includeHorizontalSymmetry = true
-    )
-    {
-        IEnumerable<Entity> Templates(double stepX, double stepY) =>
-            CadDraw.EntityArray(pattern.Template, CadDraw.P(stepX, stepY, 0), pattern.Count);
-
-        // 原始 1/4 断面。
-        doc.AddTransformed(new XYZ(x, y, 0), Templates(pattern.StepX, pattern.StepY));
-
-        if (includeHorizontalSymmetry)
-        {
-            // 关于水平中心线镜像：反向 Y 步进，避免块插入实体负缩放失效。
-            doc.AddTransformed(
-                new XYZ(x, 2 * horizontalAxisY - y, 0),
-                Templates(pattern.StepX, -pattern.StepY)
-            );
-        }
-
-        // 关于竖直中心线 x = 0 镜像：反向 X 步进。
-        doc.AddTransformed(new XYZ(-x, y, 0), Templates(-pattern.StepX, pattern.StepY));
-
-        if (includeHorizontalSymmetry)
-        {
-            // 同时关于水平、竖直中心线镜像。
-            doc.AddTransformed(
-                new XYZ(-x, 2 * horizontalAxisY - y, 0),
-                Templates(-pattern.StepX, -pattern.StepY)
-            );
-        }
-    }
+    ) => doc.AddEntities(CadArray.FourWaySymmetric(
+        doc,
+        x,
+        y,
+        pattern,
+        horizontalAxisY,
+        includeHorizontalSymmetry
+    ));
 }

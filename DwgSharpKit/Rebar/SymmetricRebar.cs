@@ -4,12 +4,13 @@ using System.Linq;
 using ACadSharp;
 using ACadSharp.Entities;
 using CSMath;
+using DwgSharpKit.Drawing;
 
 namespace DwgSharpKit.Rebar;
 
 /// <summary>
 /// 对称线筋：左右两半关于竖直对称轴镜像。节点模型，返回 1:1 本地图元（不自动入文档），
-/// 供使用者用 <see cref="DwgSharpKit.CadDocumentExtensions.AddTranslated"/> 复用放置。
+/// 供使用者用 <see cref="CadDocumentExtensions.AddTranslated"/> 复用放置。
 /// 拼接镜像后会自动合并对称轴上的共线点，使恰好穿过对称轴的中间段成为一整段，
 /// 标注取整段长度、文本居中于对称轴。
 /// </summary>
@@ -36,7 +37,7 @@ public static class SymmetricRebar
     /// <param name="half">一侧（自最外侧端到对称轴）的顶点序列；Text 挂在各段起点上</param>
     public static List<RebarVertex> BuildVertices(IReadOnlyList<RebarVertex> half)
     {
-        double axis = half[^1].Point.X;
+        var axis = half[^1].Point.X;
 
         // 右半镜像：去掉与轴重合点，绕 X
         var mirror = half
@@ -60,7 +61,7 @@ public static class SymmetricRebar
         }
 
         var result = new List<RebarVertex>(verts.Count);
-        for (int i = 0; i < verts.Count; i++)
+        for (var i = 0; i < verts.Count; i++)
         {
             var p = verts[i];
             if (result.Count >= 2 && IsCollinear(result[^2], result[^1], p))

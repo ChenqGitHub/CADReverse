@@ -41,6 +41,43 @@ def _point(value: Any) -> list[float] | None:
         return None
 
 
+def _relative_point(value: Any, origin: list[float]) -> list[float] | None:
+    point = _point(value)
+    if point is None:
+        return None
+    return [point[index] - origin[index] for index in range(3)]
+
+
+_POINT_KEYS = {
+    "point",
+    "start",
+    "end",
+    "center",
+    "min",
+    "max",
+    "insertion_point",
+    "text_position",
+    "start_point",
+    "end_point",
+    "dimension_line_point",
+    "angle_vertex",
+    "arc_point",
+}
+
+
+def _make_relative(value: Any, origin: list[float], key: str | None = None) -> Any:
+    """Translate coordinate-bearing values while leaving lengths and angles unchanged."""
+    if isinstance(value, dict):
+        return {child_key: _make_relative(child, origin, child_key) for child_key, child in value.items()}
+    if isinstance(value, list):
+        if key in _POINT_KEYS or (key is not None and key.endswith("Point")):
+            point = _relative_point(value, origin)
+            if point is not None:
+                return point
+        return [_make_relative(child, origin) for child in value]
+    return value
+
+
 def _first_point(entity: Any, property_names: tuple[str, ...]) -> list[float] | None:
     for property_name in property_names:
         point = _point(_get(entity, property_name))
@@ -72,7 +109,7 @@ def _common(entity: Any, index: int) -> dict[str, Any]:
     }
 
 
-def _read_entity(entity: Any, index: int) -> dict[str, Any]:
+def _read_entity(entity: Any, index: int, origin: list[float]) -> dict[str, Any]:
     item = _common(entity, index)
     name = item["object_name"] or ""
     geometry: dict[str, Any] = {}
@@ -188,7 +225,7 @@ def _read_entity(entity: Any, index: int) -> dict[str, Any]:
         item["unsupported"] = True
 
     item["geometry"] = geometry
-    return item
+    return _make_relative(item, origin)
 
 
 def _detect_line_arrays(entities: list[dict[str, Any]], tolerance: float = 1e-4) -> list[dict[str, Any]]:
@@ -248,68 +285,108 @@ def _detect_line_arrays(entities: list[dict[str, Any]], tolerance: float = 1e-4)
     return arrays
 
 
-def _select_region(zwcad: Autocad, mode: str) -> tuple[Any, dict[str, Any]]:
+def _select_origin(zwcad: Autocad) -> list[float]:
+    value = zwcad.doc.Utility.GetPoint(
+        APoint(0, 0, 0),
+        "Select local coordinate origin (center point): ",
+    )
+    origin = _point(value)
+    if origin is None:
+        raise RuntimeError("CAD did not return a valid center point.")
+    return origin
+
+
+def _resolve_origin(
+    zwcad: Autocad,
+    origin_mode: str,
+    selection_mode: str,
+) -> list[float]:
+    """整图导出默认用绝对坐标；手动框选默认让用户点局部原点。"""
+    if origin_mode == "zero" or (origin_mode == "auto" and selection_mode == "all"):
+        return [0.0, 0.0, 0.0]
+    return _select_origin(zwcad)
+
+
+def _iter_layout_objects(zwcad: Autocad):
+    """遍历当前布局（模型空间或图纸空间）的全部实体。"""
+    block = zwcad.doc.ActiveLayout.Block
+    for index in range(int(block.Count)):
+        yield block.Item(index)
+
+
+def _select_rectangle(zwcad: Autocad, mode: str, origin: list[float]):
+    """矩形框选；``window`` 只选完全包含的实体，``crossing`` 还包含相交实体。"""
     utility = zwcad.doc.Utility
     # AutoCAD's COM binding rejects None for the optional BasePoint argument.
     # APoint is an array type understood by both AutoCAD and ZWCAD COM APIs.
-    first = utility.GetPoint(APoint(0, 0, 0), "Select region first corner: ")
+    first = utility.GetPoint(APoint(*origin), "Select region first corner: ")
     second = utility.GetCorner(first, "Select region opposite corner: ")
-    p1, p2 = _point(first), _point(second)
-    if p1 is None or p2 is None:
-        raise RuntimeError("CAD did not return valid selection points.")
-
     selection = zwcad.doc.SelectionSets.Add(f"CADReverse_{uuid.uuid4().hex}")
     selection.Select(0 if mode == "window" else 1, first, second)
-    return selection, {
-        "mode": mode,
-        "min": [min(p1[0], p2[0]), min(p1[1], p2[1]), min(p1[2], p2[2])],
-        "max": [max(p1[0], p2[0]), max(p1[1], p2[1]), max(p1[2], p2[2])],
-    }
+    return selection
 
 
-def _select_on_screen(zwcad: Autocad) -> tuple[Any, dict[str, Any]]:
-    """Use pyautocad's native SelectOnScreen interaction."""
-    selection = zwcad.get_selection("Select objects in the CAD detail region")
-    boxes = [_bbox(selection.Item(i)) for i in range(selection.Count)]
-    boxes = [box for box in boxes if box and box["min"] and box["max"]]
-    if boxes:
-        minimum = [min(box["min"][axis] for box in boxes) for axis in range(3)]
-        maximum = [max(box["max"][axis] for box in boxes) for axis in range(3)]
-    else:
-        minimum = maximum = None
-    return selection, {"mode": "screen", "min": minimum, "max": maximum}
+def _entities_bbox(entities: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """由已导出实体的包围盒汇总区域范围（相对原点，单位与图纸一致）。"""
+    boxes = [item.get("bounding_box") for item in entities]
+    boxes = [box for box in boxes if box and box.get("min") and box.get("max")]
+    if not boxes:
+        return None
+    minimum = [min(box["min"][axis] for box in boxes) for axis in range(3)]
+    maximum = [max(box["max"][axis] for box in boxes) for axis in range(3)]
+    return {"min": minimum, "max": maximum}
 
 
-def export_region(selection_mode: str, mode: str) -> dict[str, Any]:
+def export_region(selection_mode: str, mode: str, origin_mode: str) -> dict[str, Any]:
     zwcad = Autocad(create_if_not_exists=False)
-    if selection_mode == "screen":
-        selection, region = _select_on_screen(zwcad)
+    origin = _resolve_origin(zwcad, origin_mode, selection_mode)
+
+    selection = None
+    if selection_mode == "all":
+        source_objects = list(_iter_layout_objects(zwcad))
+    elif selection_mode == "screen":
+        selection = zwcad.get_selection("Select objects in the CAD region")
+        source_objects = [selection.Item(index) for index in range(selection.Count)]
     else:
-        selection, region = _select_region(zwcad, mode)
+        selection = _select_rectangle(zwcad, mode, origin)
+        source_objects = [selection.Item(index) for index in range(selection.Count)]
+
     try:
-        entities = [_read_entity(selection.Item(i), i + 1) for i in range(selection.Count)]
-        return {
-            "schema_version": "1.0",
-            "purpose": "CAD region for semantic recognition and C# generation",
-            "source": {
-                "application": _get(zwcad.app, "Name"),
-                "document": _get(zwcad.doc, "Name"),
-                "layout": _get(zwcad.doc.ActiveLayout, "Name"),
-                "exported_at_utc": datetime.now(timezone.utc).isoformat(),
-            },
-            "region": region,
-            "entity_count": len(entities),
-            "entities": entities,
-            "repetition_candidates": _detect_line_arrays(entities),
-            "unsupported_object_names": sorted(
-                {item["object_name"] for item in entities if item.get("unsupported")}
-            ),
-        }
+        entities = [
+            _read_entity(entity, index + 1, origin)
+            for index, entity in enumerate(source_objects)
+        ]
     finally:
-        try:
-            selection.Delete()
-        except Exception:
-            pass
+        if selection is not None:
+            try:
+                selection.Delete()
+            except Exception:
+                pass
+
+    box = _entities_bbox(entities)
+    return {
+        "schema_version": "1.1",
+        "purpose": "CAD region for semantic recognition and C# generation",
+        "source": {
+            "application": _get(zwcad.app, "Name"),
+            "document": _get(zwcad.doc, "Name"),
+            "layout": _get(zwcad.doc.ActiveLayout, "Name"),
+            "exported_at_utc": datetime.now(timezone.utc).isoformat(),
+            "selection_origin": origin,
+        },
+        "selection_mode": selection_mode,
+        "region": {
+            "mode": selection_mode,
+            "min": box["min"] if box else None,
+            "max": box["max"] if box else None,
+        },
+        "entity_count": len(entities),
+        "entities": entities,
+        "repetition_candidates": _detect_line_arrays(entities),
+        "unsupported_object_names": sorted(
+            {item["object_name"] for item in entities if item.get("unsupported")}
+        ),
+    }
 
 
 def main() -> None:
@@ -317,13 +394,22 @@ def main() -> None:
     parser.add_argument("-o", "--output", default="cad-region.json", help="Output JSON path.")
     parser.add_argument(
         "--selection",
-        choices=("screen", "rectangle"),
+        choices=("screen", "rectangle", "all"),
         default="screen",
-        help="screen uses pyautocad get_selection; rectangle uses a rectangular selection window.",
+        help=(
+            "screen 用 pyautocad 屏幕选择；rectangle 用矩形窗口；"
+            "all 导出当前布局全部实体（供 classify_regions.py 自动分区）。"
+        ),
     )
     parser.add_argument("--mode", choices=("window", "crossing"), default="crossing")
+    parser.add_argument(
+        "--origin",
+        choices=("auto", "pick", "zero"),
+        default="auto",
+        help="坐标原点：auto 为整图取绝对坐标、框选取交互点；pick 强制交互；zero 用 (0,0,0)。",
+    )
     args = parser.parse_args()
-    payload = export_region(args.selection, args.mode)
+    payload = export_region(args.selection, args.mode, args.origin)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

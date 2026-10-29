@@ -9,3 +9,26 @@ __pycache__/
 *.log
 nupkgs/
 *.dwg
+
+# 构建产物（dotnet build --artifacts-path）
+_artifacts/
+# 临时脚本与探测目录
+_ab/
+_probe/
+.tmp-mcp/
+# 沙箱权限诊断报告
+.acl-reports/
+# IDE
+.idea/
+
+# 图纸与中间数据（体积大 / 可再生成）
+artifacts/
+dwg/
+analysis/
+split/
+scripts/
+/01_rebar_detail_sheet.png
+/02_n31.png
+/n41.png
+/rebar_detail.png
+/view.png

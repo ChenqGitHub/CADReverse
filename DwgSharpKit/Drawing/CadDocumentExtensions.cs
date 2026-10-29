@@ -4,7 +4,7 @@ using ACadSharp.Tables;
 using CSMath;
 using DwgSharpKit.Standards;
 
-namespace DwgSharpKit
+namespace DwgSharpKit.Drawing
 {
     public static class CadDocumentExtensions
     {
@@ -19,10 +19,17 @@ namespace DwgSharpKit
 
         public static void AddTranslated(
             this CadDocument doc,
-            CSMath.XYZ move,
+            XYZ move,
             IEnumerable<Entity> templates,
             Action<Entity>? onCopy = null
-        ) => AddTransformed(doc, move, templates, 1, 0, null, onCopy);
+        ) => doc.AddEntities(doc.TransformEntities(move, templates, 1, 0, null, onCopy));
+
+        public static void AddTranslated(
+            this CadDocument doc,
+            XYZ move,
+            Entity templates,
+            Action<Entity>? onCopy = null
+        ) => doc.AddEntities(doc.TransformEntities(move, [templates], 1, 0, null, onCopy));
 
         /// <summary>
         /// 整组变换后写入文档：对每个模板克隆体依次做 缩放(绕 pivot)→旋转(绕 Z 轴，过 pivot)→平移(move)，
@@ -43,8 +50,23 @@ namespace DwgSharpKit
             double rotation = 0,
             CSMath.XYZ? pivot = null,
             Action<Entity>? onCopy = null
+        ) =>
+            doc.AddEntities(doc.TransformEntities(move, templates, scale, rotation, pivot, onCopy));
+
+        /// <summary>
+        /// 克隆并变换实体，但不写入文档。调用方需要显式调用 <see cref="AddEntities{T}"/>。
+        /// </summary>
+        public static List<Entity> TransformEntities(
+            this CadDocument doc,
+            CSMath.XYZ move,
+            IEnumerable<Entity> templates,
+            double scale = 1,
+            double rotation = 0,
+            CSMath.XYZ? pivot = null,
+            Action<Entity>? onCopy = null
         )
         {
+            var result = new List<Entity>();
             foreach (var template in templates)
             {
                 var copy = (Entity)template.Clone();
@@ -52,9 +74,6 @@ namespace DwgSharpKit
                 copy.ApplyTranslation(move);
                 if (copy is Dimension dimension && dimension.Block != null)
                 {
-                    // Dimensions are displayed through their anonymous block. ACadSharp
-                    // transforms the definition points but leaves block geometry untouched.
-                    // Transform the block contents as well so the visible annotation follows.
                     foreach (var blockEntity in dimension.Block.Entities)
                     {
                         ApplyPlaceTransform(blockEntity, scale, rotation, pivot);
@@ -67,13 +86,12 @@ namespace DwgSharpKit
                 }
                 if (copy is TextEntity text)
                 {
-                    // ApplyTransform may not update AlignmentPoint for non-baseline aligned text;
-                    // sync manually to keep text anchored correctly after compound transforms.
                     text.AlignmentPoint = text.InsertPoint;
                 }
                 onCopy?.Invoke(copy);
-                doc.Entities.Add(copy);
+                result.Add(copy);
             }
+            return result;
         }
 
         private static void ApplyPlaceTransform(
